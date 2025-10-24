@@ -49,6 +49,7 @@ GZ_ADD_PLUGIN(
 ## 3. 参考```ignition::gazebo::systems```的接口用于编写plugin
 > [reference url](https://gazebosim.org/api/gazebo/6/namespaceignition_1_1gazebo_1_1systems.html)
 
+
 ## 4. cmake编译pulgin
 - 在使用```gz_find_package(gz-plugin2 REQUIRED COMPOENTS register)```前，需要先使用
 ``` cmake
@@ -67,4 +68,9 @@ add_library(InvertedPendulumControllerPlugin SHARED src/controller.cpp)
 target_link_libraries(InvertedPendulumControllerPlugin
   PUBLIC gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER}
 )
+```
+
+## 5. 使用-v参数进行调试
+``` bash
+gz sim inverted_pendulum_world.sdf -v 5 | grep ControllerPlugin -n
 ```

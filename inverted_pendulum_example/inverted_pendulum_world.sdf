@@ -17,6 +17,12 @@
             name="gz::sim::systems::SceneBroadcaster">
         </plugin>
 
+		<!-- Controller Plugin-->
+		<plugin
+			filename="libInvertedPendulumControllerPlugin.so"
+			name="ControllerPlugin::InvertedPendulumController">
+		</plugin>
+
 		<!-- Rely on Gazebo's default light to avoid duplicate 'sun' name -->
 		<!-- Basic environment -->
 		<gravity>0 0 -9.81</gravity>

@@ -12,3 +12,8 @@ add_library(InvertedPendulumControllerPlugin SHARED src/controller.cpp)
 target_link_libraries(InvertedPendulumControllerPlugin
   PUBLIC gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER}
 )
+
+set_target_properties(InvertedPendulumControllerPlugin PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+  PREFIX "lib"
+)
