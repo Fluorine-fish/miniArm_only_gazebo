@@ -8,3 +8,9 @@ gz sdf -p miniArm.urdf > miniArm.sdf
 > 直接使用urdf让gz自己解析
 
 ### 如果保留原始数据不简化，直接运行仿真会导致仿真崩溃
+### 尝试dae格式问题仍旧存在
+
+## 2. gazebo pulgin 作为控制器
+> (tutorial)[https://gazebosim.org/api/sim/8/createsystemplugins.html]
+
+# Controllers and systems that provide feedback based on the state of the world will need to implement `ISystemPostUpdate` to read the state at the end of an update frame, as well as `ISystemPreUpdate` to provide feedback at the beginning of the next frame. 实现 ISystemPostUpdate 和 ISystemPreUpdate 接口，前者读取状态，后者提供反馈
