@@ -356,7 +356,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/link6.STLsimsim" />
+          filename="../meshes/link6.STL" />
       </geometry>
       <material
         name="">

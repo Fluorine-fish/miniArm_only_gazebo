@@ -74,7 +74,7 @@
 
 		<!-- Include the mini arm URDF directly and place its frame at world origin -->
 		<include>
-			<uri>miniArm_URDF/urdf/miniarm.urdf</uri>
+			<uri>miniArm_URDF/urdf/miniarm_collision_test.urdf</uri>
 			<!-- Set the instance name; used below when fixing to world -->
 			<name>miniarm</name>
 			<pose>0 0 0.02 0 0 0</pose>
