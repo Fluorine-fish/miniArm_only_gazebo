@@ -9,7 +9,13 @@
 
 #include <iostream>
 #include <fstream>
- 
+
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/float64_multi_array.hpp"
+#include <rclcpp/node.hpp>
+#include <rclcpp/utilities.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
+
 namespace ControllerPlugin {
     class InvertedPendulumController : 
         public gz::sim::System,
@@ -25,7 +31,28 @@ public:
     {
         std::cerr << "[Controller_Plugin] Configure called\n";
         this->CacheJointEntities(_ecm);
+
+        if(!rclcpp::ok()) {
+            int argc = 0;
+            char **argv = nullptr;
+            rclcpp::init(argc,argv);
+            this->owns_context_ = true;
+        }
+
+        // init ROS2 node 
+        this->ros_node_ = std::make_shared<rclcpp::Node>("inverted_pendulum_plugin");
+        this->executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+        this->joint_pub_ = this->ros_node_
+            ->create_publisher<std_msgs::msg::Float64MultiArray>("/joint_states",10);
+
+        this->executor_->add_node(ros_node_);
+
+        // spin ROS2 node
+        ros_spin_thread_ = std::thread([this]() {
+            executor_->spin();
+        });
     }
+
     void PreUpdate(const gz::sim::UpdateInfo &,
                    gz::sim::EntityComponentManager &_ecm) override
     {
@@ -35,10 +62,12 @@ public:
         this->EnsureStateComponents(_ecm);
     }
 
-    void PostUpdate(const gz::sim::UpdateInfo &_info,
+    void PostUpdate(const gz::sim::UpdateInfo &,
                     const gz::sim::EntityComponentManager &_ecm) override {
         // Post-update logic here
         
+        std_msgs::msg::Float64MultiArray msg;
+
         // 遍历打印缓存实体关节的角度和位置
         for (const auto &ent_ : this->jointEntities_) {
             const std::string &name = ent_.first;
@@ -49,10 +78,11 @@ public:
                 const auto &vector_ = pos->Data();
                 if (!vector_.empty()) {
                     double q = vector_[0];
-                    std::cout << "[Controller_Plugin] joint_name: :["<< name <<"] position: " << q ; 
+                    msg.data.push_back(q);
+                   // std::cout << "[Controller_Plugin] joint_name: :["<< name <<"] position: " << q ; 
                 }
             }else{
-                std::cout << "[Controller_Plugin] joint_name: :["<< name <<"] position: NAN" ;
+                //std::cout << "[Controller_Plugin] joint_name: :["<< name <<"] position: NAN" ;
             }
 
             // 读取q_dot
@@ -60,13 +90,27 @@ public:
                 const auto &vector_ = vel->Data();
                 if (!vector_.empty()) {
                     double q_dot = vector_[0];
-                    std::cout << " velocity: " << q_dot << std::endl;
+                    msg.data.push_back(q_dot);
+                   // std::cout << " velocity: " << q_dot << std::endl;
                 }
             }else{
-                std::cout << " velocity: NAN" << std::endl;
+                //std::cout << " velocity: NAN" << std::endl;
             }
         }
+
+        this->joint_pub_->publish(msg);
     }
+
+    ~InvertedPendulumController() {
+        if (this->executor_) {
+            this->executor_->cancel();
+        }
+        if (this->ros_spin_thread_.joinable())
+            ros_spin_thread_.join();
+        if (this->owns_context_ && rclcpp::ok())
+            rclcpp::shutdown();
+    }
+
 private:
     void CacheJointEntities(gz::sim::EntityComponentManager &_ecm)
     {
@@ -115,6 +159,12 @@ private:
 
     const std::vector<std::string> targets_{"cart_slider", "pole_hinge"};
     std::unordered_map<std::string, gz::sim::Entity> jointEntities_;
+private:
+    std::shared_ptr<rclcpp::Node> ros_node_;
+    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_pub_;
+    std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
+    std::thread ros_spin_thread_;
+    bool owns_context_{false};
 };
 }
 
