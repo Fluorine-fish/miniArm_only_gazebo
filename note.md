@@ -85,3 +85,39 @@ sudo apt install ros-<ros2-distro>-foxglove-bridge
 ros2 launch foxglove_bridge foxglove_bridge_launch.xml port :=8765
 ```
 - port参数指定websocket端口，foxglove studio连接该端口即可监看ros2节点
+
+## 7. 为了防止在自定义的plugin启动，调用Config时其他服务未启动，请在PrePost中进行初始化
+比如以下的方法需要在PrePost中调用
+```cpp
+    void SetInitialPosition(gz::sim::EntityComponentManager &_ecm) {
+        this->EnsureStateComponents(_ecm);
+        std::cout << "[Controller_Plugin] Start initial position set\n";
+
+        for(const auto &ent_ : this->jointEntities_){
+            const auto &name = ent_.first;
+            const gz::sim::Entity &ent = ent_.second;
+            //get component from ent
+            if (name == this->targets_[0]){
+                auto *reset = _ecm.Component<gz::sim::components::JointPositionReset>(ent);
+                if (!reset) {
+                    _ecm.CreateComponent(ent,
+                        gz::sim::components::JointPositionReset({this->initial_position}));
+                }else{
+                    auto &data = reset -> Data();
+                    if(data.empty()){
+                        data.push_back(this->initial_position);
+                    }else{
+                        data[0] = this->initial_position;
+                    }
+                }
+                _ecm.SetChanged(ent,
+                    gz::sim::components::JointPositionReset::typeId,
+                    gz::sim::ComponentState::OneTimeChange);
+                std::cout << "[Controller_Plugin] Initial position setted!\n";
+            }
+
+        }
+
+        this->is_initial_position_set = true;
+    }
+```

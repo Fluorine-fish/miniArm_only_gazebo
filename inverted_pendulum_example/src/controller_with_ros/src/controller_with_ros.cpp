@@ -1,10 +1,13 @@
+#include <gz/sim/Entity.hh>
 #include <gz/sim/System.hh>
 #include <gz/plugin/Register.hh>
 
 #include <gz/sim/EntityComponentManager.hh>
+#include <gz/sim/Types.hh>
 #include <gz/sim/components/Joint.hh> 
 #include <gz/sim/components/JointPosition.hh>
 #include <gz/sim/components/JointVelocity.hh>
+#include <gz/sim/components/JointPositionReset.hh>
 #include <gz/sim/components/Name.hh>
 
 #include <iostream>
@@ -32,6 +35,7 @@ public:
         std::cerr << "[Controller_Plugin] Configure called\n";
         this->CacheJointEntities(_ecm);
 
+        // Prepare for ROS2 
         if(!rclcpp::ok()) {
             int argc = 0;
             char **argv = nullptr;
@@ -51,6 +55,7 @@ public:
         ros_spin_thread_ = std::thread([this]() {
             executor_->spin();
         });
+
     }
 
     void PreUpdate(const gz::sim::UpdateInfo &,
@@ -60,6 +65,10 @@ public:
             this->CacheJointEntities(_ecm);
 
         this->EnsureStateComponents(_ecm);
+        
+        if (!this->is_initial_position_set){
+            this->SetInitialPosition(_ecm);
+        }
     }
 
     void PostUpdate(const gz::sim::UpdateInfo &,
@@ -70,7 +79,7 @@ public:
 
         // 遍历打印缓存实体关节的角度和位置
         for (const auto &ent_ : this->jointEntities_) {
-            const std::string &name = ent_.first;
+            // const std::string &name = ent_.first;
             const gz::sim::Entity &ent = ent_.second;
             
             // 读取q
@@ -112,8 +121,7 @@ public:
     }
 
 private:
-    void CacheJointEntities(gz::sim::EntityComponentManager &_ecm)
-    {
+    void CacheJointEntities(gz::sim::EntityComponentManager &_ecm) {
         _ecm.Each<gz::sim::components::Joint, gz::sim::components::Name>(
             [&](const gz::sim::Entity &_ent,
                  const gz::sim::components::Joint *,
@@ -137,8 +145,7 @@ private:
             });
     }
 
-    void EnsureStateComponents(gz::sim::EntityComponentManager &_ecm)
-    {
+    void EnsureStateComponents(gz::sim::EntityComponentManager &_ecm) {
         for (const auto &ent_ : this->jointEntities_)
         {
             const auto &ent = ent_.second;
@@ -157,6 +164,38 @@ private:
         }
     }
 
+    void SetInitialPosition(gz::sim::EntityComponentManager &_ecm) {
+        this->EnsureStateComponents(_ecm);
+        std::cout << "[Controller_Plugin] Start initial position set\n";
+
+        for(const auto &ent_ : this->jointEntities_){
+            const auto &name = ent_.first;
+            const gz::sim::Entity &ent = ent_.second;
+            //get component from ent
+            if (name == this->targets_[0]){
+                auto *reset = _ecm.Component<gz::sim::components::JointPositionReset>(ent);
+                if (!reset) {
+                    _ecm.CreateComponent(ent,
+                        gz::sim::components::JointPositionReset({this->initial_position}));
+                }else{
+                    auto &data = reset -> Data();
+                    if(data.empty()){
+                        data.push_back(this->initial_position);
+                    }else{
+                        data[0] = this->initial_position;
+                    }
+                }
+                _ecm.SetChanged(ent,
+                    gz::sim::components::JointPositionReset::typeId,
+                    gz::sim::ComponentState::OneTimeChange);
+                std::cout << "[Controller_Plugin] Initial position setted!\n";
+            }
+
+        }
+
+        this->is_initial_position_set = true;
+    }
+
     const std::vector<std::string> targets_{"pivot_joint"};
     std::unordered_map<std::string, gz::sim::Entity> jointEntities_;
 private:
@@ -165,6 +204,8 @@ private:
     std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
     std::thread ros_spin_thread_;
     bool owns_context_{false};
+    bool is_initial_position_set{false};
+    double initial_position{0.5};
 };
 }
 
