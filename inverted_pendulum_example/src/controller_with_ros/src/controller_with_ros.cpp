@@ -157,7 +157,7 @@ private:
         }
     }
 
-    const std::vector<std::string> targets_{"cart_slider", "pole_hinge"};
+    const std::vector<std::string> targets_{"pivot_joint"};
     std::unordered_map<std::string, gz::sim::Entity> jointEntities_;
 private:
     std::shared_ptr<rclcpp::Node> ros_node_;

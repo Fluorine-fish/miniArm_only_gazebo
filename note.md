@@ -74,3 +74,14 @@ target_link_libraries(InvertedPendulumControllerPlugin
 ``` bash
 gz sim inverted_pendulum_world.sdf -v 5 | grep ControllerPlugin -n
 ```
+
+## 6. 使用foxglove监看ros2节点
+- 安装foxglove_bridge
+```bash
+sudo apt install ros-<ros2-distro>-foxglove-bridge
+```
+
+```bash
+ros2 launch foxglove_bridge foxglove_bridge_launch.xml port :=8765
+```
+- port参数指定websocket端口，foxglove studio连接该端口即可监看ros2节点

@@ -2,4 +2,4 @@
 
 - [ ] 写plugin的控制器
 
-- [ ] 写transport接口和ros-gz-bridge通讯 foxgloves监看
+- [x] 写plugin接口和ros-gz-bridge通讯 foxgloves监看

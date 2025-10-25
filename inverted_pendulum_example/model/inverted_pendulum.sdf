@@ -1,186 +1,90 @@
-<sdf version='1.11'>
-	<!-- Inverted pendulum model: base (fixed in world), cart (slides along x), pole (revolute at cart) -->
-	<model name='inverted_pendulum'>
-		<static>false</static>
+<?xml version="1.0"?>
+<sdf version="1.11">
+  <model name="inverted_pendulum">
+    <static>false</static>
 
-		<!-- Base anchor; world will weld to this via a fixed joint in the world file -->
-		<link name='base_link'>
-			<pose>0 0 0 0 0 0</pose>
-			<inertial>
-				<!-- Tiny mass to avoid singular inertia -->
-				<mass>1e-4</mass>
-				<inertia>
-					<ixx>1e-6</ixx>
-					<ixy>0</ixy>
-					<ixz>0</ixz>
-					<iyy>1e-6</iyy>
-					<iyz>0</iyz>
-					<izz>1e-6</izz>
-				</inertia>
-			</inertial>
-			<!-- Small visual marker -->
-			<visual name='base_vis'>
-				<geometry>
-					<box>
-						<size>0.1 0.1 0.02</size>
-					</box>
-				</geometry>
-				<material>
-					<ambient>0.2 0.2 0.2 1</ambient>
-					<diffuse>0.2 0.2 0.2 1</diffuse>
-				</material>
-			</visual>
-			<collision name='base_col'>
-				<geometry>
-					<box>
-						<size>0.1 0.1 0.02</size>
-					</box>
-				</geometry>
-			</collision>
-		</link>
+    <!-- 底座，固定在世界坐标原点 -->
+    <link name="base">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>1e-6</ixx><iyy>1e-6</iyy><izz>1e-6</izz>
+        </inertia>
+      </inertial>
+      <collision name="base_collision">
+        <geometry>
+          <box>
+            <size>0 0 0</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="base_visual">
+        <geometry>
+          <box>
+            <size>0.1 0.1 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.3 0.3 0.3 1</ambient>
+        </material>
+      </visual>
+      <!-- 使底座固定在世界上 -->
+      <self_collide>false</self_collide>
+      <gravity>false</gravity>
+    </link>
 
-		<!-- Cart that slides along x on top of the base -->
-		<link name='cart'>
-			<!-- Lifted slightly above ground to avoid initial contact with plane -->
-			<pose>0 0 0.05 0 0 0</pose>
-			<inertial>
-				<mass>1.0</mass>
-				<inertia>
-					<!-- Approximated for a 0.3 x 0.2 x 0.05 m box -->
-					<ixx>0.003</ixx>
-					<ixy>0</ixy>
-					<ixz>0</ixz>
-					<iyy>0.005</iyy>
-					<iyz>0</iyz>
-					<izz>0.006</izz>
-				</inertia>
-			</inertial>
-			<visual name='cart_vis'>
-				<geometry>
-					<box>
-						<size>0.3 0.2 0.05</size>
-					</box>
-				</geometry>
-				<material>
-					<ambient>0.1 0.4 0.8 1</ambient>
-					<diffuse>0.1 0.4 0.8 1</diffuse>
-				</material>
-			</visual>
-			<collision name='cart_col'>
-				<geometry>
-					<box>
-						<size>0.3 0.2 0.05</size>
-					</box>
-				</geometry>
-				<surface>
-					<friction>
-						<ode>
-							<mu>0.1</mu>
-							<mu2>0.1</mu2>
-						</ode>
-					</friction>
-					<bounce/>
-					<contact>
-						<ode>
-							<soft_cfm>0</soft_cfm>
-							<soft_erp>0.2</soft_erp>
-						</ode>
-					</contact>
-				</surface>
-			</collision>
-		</link>
+    <!-- 摆杆 -->
+    <link name="pendulum">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0.5 0 0 0</pose>
+        <mass>1.0</mass>
+        <inertia>
+          <ixx>0.0836</ixx>
+          <iyy>0.0836</iyy>
+          <izz>0.00045</izz>
+        </inertia>
+      </inertial>
+      <collision name="pendulum_collision">
+        <pose>0 0 0.5 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.03</radius>
+            <length>1.0</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <visual name="pendulum_visual">
+        <pose>0 0 0.5 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.03</radius>
+            <length>1.0</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.8 0.2 0.2 1</ambient>
+          <diffuse>0.8 0.2 0.2 1</diffuse>
+        </material>
+      </visual>
+    </link>
 
-		<!-- Pole mounted on top of the cart; hinge axis along +y (motion in x-z plane) -->
-		<link name='pole'>
-			<!-- Start nearly upright; hinge pin at cart top -->
-			<pose>0 0 0.3 0 0 0</pose>
-			<inertial>
-				<mass>0.2</mass>
-				<!-- Solid cylinder inertia about COM for length L=1.0, radius r=0.02 -->
-				<inertia>
-					<ixx>0.04</ixx>
-					<ixy>0</ixy>
-					<ixz>0</ixz>
-					<iyy>0.0002</iyy>
-					<iyz>0</iyz>
-					<izz>0.04</izz>
-				</inertia>
-			</inertial>
-			<visual name='pole_vis'>
-				<geometry>
-					<cylinder>
-						<radius>0.02</radius>
-						<length>1.0</length>
-					</cylinder>
-				</geometry>
-				<material>
-					<ambient>0.8 0.6 0.2 1</ambient>
-					<diffuse>0.8 0.6 0.2 1</diffuse>
-				</material>
-			</visual>
-			<collision name='pole_col'>
-				<geometry>
-					<cylinder>
-						<radius>0.02</radius>
-						<length>1.0</length>
-					</cylinder>
-				</geometry>
-				<surface>
-					<friction>
-						<ode>
-							<mu>0.2</mu>
-							<mu2>0.2</mu2>
-						</ode>
-					</friction>
-				</surface>
-			</collision>
-		</link>
-
-		<!-- Slider joint: cart moves along X relative to base_link -->
-		<joint name='cart_slider' type='prismatic'>
-			<parent>base_link</parent>
-			<child>cart</child>
-			<pose>0 0 0.05 0 0 0</pose>
-			<axis>
-				<xyz>1 0 0</xyz>
-				<limit>
-					<lower>-2.0</lower>
-					<upper>2.0</upper>
-					<effort>200.0</effort>
-					<velocity>5.0</velocity>
-				</limit>
-				<dynamics>
-					<damping>0.1</damping>
-					<friction>0.0</friction>
-				</dynamics>
-			</axis>
-		</joint>
-
-		<!-- Revolute joint at the cart top plate; hinge axis is +y -->
-		<joint name='pole_hinge' type='revolute'>
-			<parent>cart</parent>
-			<child>pole</child>
-			<!-- Position joint at the cart's top center; pole model origin at hinge -->
-			<pose>0 0 0.075 0 0 0</pose>
-			<axis>
-				<xyz>0 1 0</xyz>
-				<limit>
-					<lower>-3.1416</lower>
-					<upper>3.1416</upper>
-					<effort>50.0</effort>
-					<velocity>10.0</velocity>
-				</limit>
-				<dynamics>
-					<damping>0.01</damping>
-					<friction>0.0</friction>
-				</dynamics>
-			</axis>
-		</joint>
-
-		<!-- Optional: frames for clarity (Ignition/Gz compatible) -->
-		<frame name='hinge_frame' attached_to='cart'>
-			<pose>0 0 0.075 0 0 0</pose>
-		</frame>
-
-	</model>
+    <!-- 连接底座和摆杆的关节 -->
+    <joint name="pivot_joint" type="revolute">
+      <parent>base</parent>
+      <child>pendulum</child>
+      <pose>0 0 0 0 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+        </limit>
+        <dynamics>
+          <damping>0.01</damping>
+        </dynamics>
+      </axis>
+    </joint>
+  </model>
 </sdf>
