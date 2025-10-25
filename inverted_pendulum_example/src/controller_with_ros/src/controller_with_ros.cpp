@@ -19,63 +19,63 @@
 #include <rclcpp/utilities.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
 
-namespace ControllerPlugin {
-    class InvertedPendulumController : 
-        public gz::sim::System,
-        public gz::sim::ISystemConfigure,
-        public gz::sim::ISystemPostUpdate,
-        public gz::sim::ISystemPreUpdate {
-public:
-    // Configure: 一次性查找并缓存需要的实体
-    void Configure(const gz::sim::Entity &,
-                   const std::shared_ptr<const sdf::Element> &,
-                   gz::sim::EntityComponentManager &_ecm,
-                   gz::sim::EventManager &) override
-    {
-        std::cerr << "[Controller_Plugin] Configure called\n";
+#include <controller_with_ros/controller_with_ros.hpp>
+
+void ControllerPlugin::InvertedPendulumController::Configure(const gz::sim::Entity &,
+                const std::shared_ptr<const sdf::Element> &,
+                gz::sim::EntityComponentManager &_ecm,
+                gz::sim::EventManager &) {
+    std::cerr << "[Controller_Plugin] Configure called\n";
+    this->CacheJointEntities(_ecm);
+
+    // Prepare for ROS2 
+    if(!rclcpp::ok()) {
+        int argc = 0;
+        char **argv = nullptr;
+        rclcpp::init(argc,argv);
+        this->owns_context_ = true;
+    }
+
+    // init ROS2 node 
+    this->ros_node_ = std::make_shared<rclcpp::Node>("inverted_pendulum_plugin");
+    this->executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    this->joint_pub_ = this->ros_node_
+        ->create_publisher<std_msgs::msg::Float64MultiArray>("/joint_states",10);
+    this->contorller_pub_ = this->ros_node_
+        ->create_publisher<std_msgs::msg::Float64MultiArray>("/controller_info",10);
+
+    this->executor_->add_node(ros_node_);
+
+    // spin ROS2 node
+    ros_spin_thread_ = std::thread([this]() {
+        executor_->spin();
+    });
+
+    // create controller
+    this->CreatePIDController(0.5, 0, 0);
+}
+
+void ControllerPlugin::InvertedPendulumController::PreUpdate(const gz::sim::UpdateInfo &,
+                gz::sim::EntityComponentManager &_ecm) {
+    if (this->jointEntities_.size() < this->targets_.size())
         this->CacheJointEntities(_ecm);
 
-        // Prepare for ROS2 
-        if(!rclcpp::ok()) {
-            int argc = 0;
-            char **argv = nullptr;
-            rclcpp::init(argc,argv);
-            this->owns_context_ = true;
-        }
-
-        // init ROS2 node 
-        this->ros_node_ = std::make_shared<rclcpp::Node>("inverted_pendulum_plugin");
-        this->executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-        this->joint_pub_ = this->ros_node_
-            ->create_publisher<std_msgs::msg::Float64MultiArray>("/joint_states",10);
-
-        this->executor_->add_node(ros_node_);
-
-        // spin ROS2 node
-        ros_spin_thread_ = std::thread([this]() {
-            executor_->spin();
-        });
-
+    this->EnsureStateComponents(_ecm);
+    
+    if (!this->is_initial_position_set){
+        this->SetInitialPosition(_ecm);
     }
 
-    void PreUpdate(const gz::sim::UpdateInfo &,
-                   gz::sim::EntityComponentManager &_ecm) override
-    {
-        if (this->jointEntities_.size() < this->targets_.size())
-            this->CacheJointEntities(_ecm);
 
-        this->EnsureStateComponents(_ecm);
-        
-        if (!this->is_initial_position_set){
-            this->SetInitialPosition(_ecm);
-        }
-    }
+}
 
-    void PostUpdate(const gz::sim::UpdateInfo &,
-                    const gz::sim::EntityComponentManager &_ecm) override {
+void ControllerPlugin::InvertedPendulumController::PostUpdate(const gz::sim::UpdateInfo &,
+                    const gz::sim::EntityComponentManager &_ecm) {
         // Post-update logic here
         
         std_msgs::msg::Float64MultiArray msg;
+        std_msgs::msg::Float64MultiArray controller_info;
+        double now_q = 0.0;
 
         // 遍历打印缓存实体关节的角度和位置
         for (const auto &ent_ : this->jointEntities_) {
@@ -87,11 +87,9 @@ public:
                 const auto &vector_ = pos->Data();
                 if (!vector_.empty()) {
                     double q = vector_[0];
+                    now_q = q;
                     msg.data.push_back(q);
-                   // std::cout << "[Controller_Plugin] joint_name: :["<< name <<"] position: " << q ; 
                 }
-            }else{
-                //std::cout << "[Controller_Plugin] joint_name: :["<< name <<"] position: NAN" ;
             }
 
             // 读取q_dot
@@ -100,113 +98,28 @@ public:
                 if (!vector_.empty()) {
                     double q_dot = vector_[0];
                     msg.data.push_back(q_dot);
-                   // std::cout << " velocity: " << q_dot << std::endl;
                 }
-            }else{
-                //std::cout << " velocity: NAN" << std::endl;
             }
         }
+        
+        if (!this->PIDContorller_handel) {
+            std::cerr << "[Controller_Plugin] PID controller not initialized\n";
+            return;
+        }
+        this->PIDContorller_handel->PID_Calc(this->taregt_position, now_q);
 
+        controller_info.data.push_back(this->PIDContorller_handel->_now);
+        controller_info.data.push_back(this->PIDContorller_handel->_err);
+        controller_info.data.push_back(this->PIDContorller_handel->_out);
+
+        this->contorller_pub_->publish(controller_info);
         this->joint_pub_->publish(msg);
     }
 
-    ~InvertedPendulumController() {
-        if (this->executor_) {
-            this->executor_->cancel();
-        }
-        if (this->ros_spin_thread_.joinable())
-            ros_spin_thread_.join();
-        if (this->owns_context_ && rclcpp::ok())
-            rclcpp::shutdown();
-    }
-
-private:
-    void CacheJointEntities(gz::sim::EntityComponentManager &_ecm) {
-        _ecm.Each<gz::sim::components::Joint, gz::sim::components::Name>(
-            [&](const gz::sim::Entity &_ent,
-                 const gz::sim::components::Joint *,
-                 const gz::sim::components::Name *_name)->bool
-            {
-                if (!_name) return true;
-                const std::string n = _name->Data();
-                std::cout << "[ControllerPlugin] joint entity: " << n << " ent=" << _ent << '\n';
-                for (const auto &t : this->targets_)
-                {
-                    if (n == t ||
-                        (n.size() >= t.size() && n.compare(n.size() - t.size(), t.size(), t) == 0) ||
-                        (n.find(t) != std::string::npos))
-                    {
-                        this->jointEntities_[t] = _ent;
-                        std::cout << "[ControllerPlugin] cached " << t << " -> " << _ent << '\n';
-                        break;
-                    }
-                }
-                return true;
-            });
-    }
-
-    void EnsureStateComponents(gz::sim::EntityComponentManager &_ecm) {
-        for (const auto &ent_ : this->jointEntities_)
-        {
-            const auto &ent = ent_.second;
-
-            if (!_ecm.Component<gz::sim::components::JointPosition>(ent))
-            {
-                _ecm.CreateComponent(ent, gz::sim::components::JointPosition());
-                std::cout << "[ControllerPlugin] created JointPosition component for entity " << ent << '\n';
-            }
-
-            if (!_ecm.Component<gz::sim::components::JointVelocity>(ent))
-            {
-                _ecm.CreateComponent(ent, gz::sim::components::JointVelocity());
-                std::cout << "[ControllerPlugin] created JointVelocity component for entity " << ent << '\n';
-            }
-        }
-    }
-
-    void SetInitialPosition(gz::sim::EntityComponentManager &_ecm) {
-        this->EnsureStateComponents(_ecm);
-        std::cout << "[Controller_Plugin] Start initial position set\n";
-
-        for(const auto &ent_ : this->jointEntities_){
-            const auto &name = ent_.first;
-            const gz::sim::Entity &ent = ent_.second;
-            //get component from ent
-            if (name == this->targets_[0]){
-                auto *reset = _ecm.Component<gz::sim::components::JointPositionReset>(ent);
-                if (!reset) {
-                    _ecm.CreateComponent(ent,
-                        gz::sim::components::JointPositionReset({this->initial_position}));
-                }else{
-                    auto &data = reset -> Data();
-                    if(data.empty()){
-                        data.push_back(this->initial_position);
-                    }else{
-                        data[0] = this->initial_position;
-                    }
-                }
-                _ecm.SetChanged(ent,
-                    gz::sim::components::JointPositionReset::typeId,
-                    gz::sim::ComponentState::OneTimeChange);
-                std::cout << "[Controller_Plugin] Initial position setted!\n";
-            }
-
-        }
-
-        this->is_initial_position_set = true;
-    }
-
-    const std::vector<std::string> targets_{"pivot_joint"};
-    std::unordered_map<std::string, gz::sim::Entity> jointEntities_;
-private:
-    std::shared_ptr<rclcpp::Node> ros_node_;
-    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_pub_;
-    std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
-    std::thread ros_spin_thread_;
-    bool owns_context_{false};
-    bool is_initial_position_set{false};
-    double initial_position{0.5};
-};
+void ControllerPlugin::InvertedPendulumController::CreatePIDController(
+    const double &kp, const double &ki, const double &kd) {
+    if (this->PIDContorller_handel) return;
+    this->PIDContorller_handel = new PID_Class(kp,ki,kd);
 }
 
 GZ_ADD_PLUGIN(

@@ -22,6 +22,8 @@ add_library(InvertedPendulumControllerPlugin SHARED src/controller_with_ros.cpp)
 target_link_libraries(InvertedPendulumControllerPlugin
   gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER}
 )
+target_include_directories(InvertedPendulumControllerPlugin 
+  PRIVATE include)
 ament_target_dependencies(InvertedPendulumControllerPlugin
   rclcpp
   std_msgs
