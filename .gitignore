@@ -2,3 +2,5 @@
 **/install**
 **/log**
 **/.cache**
+.vscode
+**/__pycache__/
