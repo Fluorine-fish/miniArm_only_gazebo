@@ -15,6 +15,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include <rclcpp/node.hpp>
+#include <rclcpp/subscription.hpp>
 #include <rclcpp/utilities.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
 
@@ -79,6 +80,8 @@ public:
                     const gz::sim::EntityComponentManager &_ecm) override;
 
     void CreatePIDController(const double &kp, const double &ki, const double &kd);
+
+    void subscription_callback(std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
     ~InvertedPendulumController() {
         // 释放资源
@@ -169,7 +172,6 @@ private:
                     gz::sim::ComponentState::OneTimeChange);
                 std::cout << "[Controller_Plugin] Initial position setted!\n";
             }
-
         }
 
         this->is_initial_position_set = true;
@@ -203,10 +205,10 @@ private:
 
     const std::vector<std::string> targets_{"pivot_joint"};
     std::unordered_map<std::string, gz::sim::Entity> jointEntities_;
-private:
     std::shared_ptr<rclcpp::Node> ros_node_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr contorller_pub_;
+    rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr pid_params_sub_;
     std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
     std::thread ros_spin_thread_;
     

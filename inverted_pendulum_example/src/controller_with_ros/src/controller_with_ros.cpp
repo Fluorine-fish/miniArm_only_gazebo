@@ -1,3 +1,4 @@
+#include <functional>
 #include <gz/sim/Entity.hh>
 #include <gz/sim/System.hh>
 #include <gz/plugin/Register.hh>
@@ -41,6 +42,9 @@ void ControllerPlugin::InvertedPendulumController::Configure(const gz::sim::Enti
         ->create_publisher<std_msgs::msg::Float64MultiArray>("/joint_states",10);
     this->contorller_pub_ = this->ros_node_
         ->create_publisher<std_msgs::msg::Float64MultiArray>("/controller_info",10);
+    this->pid_params_sub_ = this->ros_node_
+        ->create_subscription<std_msgs::msg::Float64MultiArray>("/pid_params", 10, 
+        [this](std_msgs::msg::Float64MultiArray::SharedPtr msg) {this->subscription_callback(msg); });
 
     this->executor_->add_node(ros_node_);
 
@@ -50,7 +54,7 @@ void ControllerPlugin::InvertedPendulumController::Configure(const gz::sim::Enti
     });
 
     // create controller
-    this->CreatePIDController(2.0, 0.5, 0);
+    this->CreatePIDController(2.5, 1.5, 0);
 }
 
 void ControllerPlugin::InvertedPendulumController::PreUpdate(const gz::sim::UpdateInfo &,
@@ -134,6 +138,25 @@ void ControllerPlugin::InvertedPendulumController::CreatePIDController(
     const double &kp, const double &ki, const double &kd) {
     if (this->PIDContorller_handel) return;
     this->PIDContorller_handel = new PID_Class(kp,ki,kd);
+}
+
+void ControllerPlugin::InvertedPendulumController::subscription_callback(
+    std_msgs::msg::Float64MultiArray::SharedPtr msg){
+    std::cout << "[Controller_Plugin] Got Pid_params msg ...\n";
+
+    if(msg){
+        const auto &pid_params = msg->data;
+        if (!pid_params.empty() && (pid_params.size() == 4)){
+            this->PIDContorller_handel->_kp = pid_params[0];
+            this->PIDContorller_handel->_ki = pid_params[1];
+            this->PIDContorller_handel->_kd = pid_params[2];
+            this->taregt_position = pid_params[3];
+
+            std::cout << "[Controller_Plugin] PID Parameters set as kp = " << pid_params[0] << " ki = " << pid_params[1] << " kd = " << pid_params[2] << "\n";
+        }
+    }else{
+        std::cerr << "[Controller_Plugin] PID Parameters wrong!\n";
+    }
 }
 
 GZ_ADD_PLUGIN(
