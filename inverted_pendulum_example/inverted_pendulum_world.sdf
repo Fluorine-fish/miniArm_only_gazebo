@@ -82,5 +82,10 @@
 			<name>inverted_pendulum</name>
 			<pose>0 0 0.02 0 0 0</pose>
 		</include>
+
+		<joint name='fix_base_to_world' type='fixed'>
+			<parent>world</parent>
+			<child>inverted_pendulum::base</child>
+		</joint>
 	</world>
 </sdf>

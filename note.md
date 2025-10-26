@@ -121,3 +121,11 @@ ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765
         this->is_initial_position_set = true;
     }
 ```
+
+## 8. 请不要直接在Entity的sdf文件中将其固定在world 而是在world中引入fix关节
+``` xml
+<joint name='fix_base_to_world' type='fixed'>
+    <parent>world</parent>
+    <child>inverted_pendulum::base</child>
+</joint>
+```

@@ -4,10 +4,8 @@
 
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/Types.hh>
-#include <gz/sim/components/Joint.hh> 
-#include <gz/sim/components/JointPosition.hh>
-#include <gz/sim/components/JointVelocity.hh>
-#include <gz/sim/components/JointPositionReset.hh>
+#include <gz/sim/components.hh>
+#include <gz/sim/components/JointForce.hh>
 #include <gz/sim/components/Name.hh>
 
 #include <iostream>
@@ -52,7 +50,7 @@ void ControllerPlugin::InvertedPendulumController::Configure(const gz::sim::Enti
     });
 
     // create controller
-    this->CreatePIDController(0.5, 0, 0);
+    this->CreatePIDController(2.0, 0.5, 0);
 }
 
 void ControllerPlugin::InvertedPendulumController::PreUpdate(const gz::sim::UpdateInfo &,
@@ -66,7 +64,9 @@ void ControllerPlugin::InvertedPendulumController::PreUpdate(const gz::sim::Upda
         this->SetInitialPosition(_ecm);
     }
 
-
+    if (this->is_controller_on){
+        this->ForceControl(_ecm);
+    }
 }
 
 void ControllerPlugin::InvertedPendulumController::PostUpdate(const gz::sim::UpdateInfo &,
@@ -100,6 +100,19 @@ void ControllerPlugin::InvertedPendulumController::PostUpdate(const gz::sim::Upd
                     msg.data.push_back(q_dot);
                 }
             }
+
+            // 读取Force
+            if (const auto *force = _ecm.Component<gz::sim::components::JointForce>(ent)) {
+                const auto &vector_ = force->Data();
+                if(!vector_.empty()) {
+                    double q_force = vector_[0];
+                    msg.data.push_back(q_force);
+                    std::cout << "[Controller_Plugin] add q_force\n";
+                }else{
+                    // 接受不到数据的占位
+                    msg.data.push_back(0);
+                }
+            }
         }
         
         if (!this->PIDContorller_handel) {
@@ -111,6 +124,7 @@ void ControllerPlugin::InvertedPendulumController::PostUpdate(const gz::sim::Upd
         controller_info.data.push_back(this->PIDContorller_handel->_now);
         controller_info.data.push_back(this->PIDContorller_handel->_err);
         controller_info.data.push_back(this->PIDContorller_handel->_out);
+        controller_info.data.push_back(this->PIDContorller_handel->_err_sum);
 
         this->contorller_pub_->publish(controller_info);
         this->joint_pub_->publish(msg);

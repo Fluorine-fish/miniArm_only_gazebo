@@ -4,9 +4,9 @@
 
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/Types.hh>
-#include <gz/sim/components/Joint.hh> 
-#include <gz/sim/components/JointPosition.hh>
-#include <gz/sim/components/JointVelocity.hh>
+#include <gz/sim/components.hh>
+#include <gz/sim/components/JointForce.hh>
+#include <gz/sim/components/JointForceCmd.hh>
 #include <gz/sim/components/JointPositionReset.hh>
 #include <gz/sim/components/Name.hh>
 
@@ -120,21 +120,25 @@ private:
             });
     }
 
+    // 确保每一个joint对象准备好插件交互的component
     void EnsureStateComponents(gz::sim::EntityComponentManager &_ecm) {
         for (const auto &ent_ : this->jointEntities_)
         {
             const auto &ent = ent_.second;
 
-            if (!_ecm.Component<gz::sim::components::JointPosition>(ent))
-            {
+            if (!_ecm.Component<gz::sim::components::JointPosition>(ent)) {
                 _ecm.CreateComponent(ent, gz::sim::components::JointPosition());
                 std::cout << "[ControllerPlugin] created JointPosition component for entity " << ent << '\n';
             }
 
-            if (!_ecm.Component<gz::sim::components::JointVelocity>(ent))
-            {
+            if (!_ecm.Component<gz::sim::components::JointVelocity>(ent)) {
                 _ecm.CreateComponent(ent, gz::sim::components::JointVelocity());
                 std::cout << "[ControllerPlugin] created JointVelocity component for entity " << ent << '\n';
+            }
+
+            if (!_ecm.Component<gz::sim::components::JointForce>(ent)) {
+                _ecm.CreateComponent(ent, gz::sim::components::JointForce());
+                std::cout << "[ControllerPlugin] created JointForce component for entity " << ent << '\n';
             }
         }
     }
@@ -171,6 +175,32 @@ private:
         this->is_initial_position_set = true;
     }
 
+    void ForceControl(gz::sim::EntityComponentManager &_ecm) {
+        this->EnsureStateComponents(_ecm);
+        
+        for(const auto &ent_ : this->jointEntities_) {
+            const auto &name = ent_.first;
+            const auto &ent = ent_.second;
+            if (name == this->targets_[0]) {
+                auto *force_cmd = _ecm.Component<gz::sim::components::JointForceCmd>(ent);
+                if (!force_cmd) {
+                    _ecm.CreateComponent(ent, 
+                    gz::sim::components::JointForceCmd({this->PIDContorller_handel->_out}));
+                }else{
+                    auto &data = force_cmd->Data();
+                    if(data.empty()){
+                        data.push_back(this->PIDContorller_handel->_out);
+                    }else{
+                        data[0] = this->PIDContorller_handel->_out;
+                    }
+                }
+                _ecm.SetChanged(ent, 
+                gz::sim::components::JointForceCmd::typeId,
+                gz::sim::ComponentState::OneTimeChange);
+            }
+        }
+    }
+
     const std::vector<std::string> targets_{"pivot_joint"};
     std::unordered_map<std::string, gz::sim::Entity> jointEntities_;
 private:
@@ -184,7 +214,8 @@ private:
     PID_Class* PIDContorller_handel{nullptr};
     bool owns_context_{false};
     bool is_initial_position_set{false};
+    bool is_controller_on{true};
     double initial_position{0.5};
-    double taregt_position{0.1};
+    double taregt_position{-0.2};
 };
 }
