@@ -129,3 +129,13 @@ ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765
     <child>inverted_pendulum::base</child>
 </joint>
 ```
+
+## 9. 使用自定义消息类型的ros编译 CMakeList应该include对应生成的依赖
+``` cmake
+target_include_directories(ControllerPlugin
+ PRIVATE include $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>)
+
+target_link_libraries(${PROJECT_NAME}_node
+    ${cpp_typesupport_target}
+)
+```

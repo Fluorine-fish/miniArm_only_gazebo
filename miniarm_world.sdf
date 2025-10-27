@@ -74,10 +74,15 @@
 
 		<!-- Include the mini arm URDF directly and place its frame at world origin -->
 		<include>
+			<!-- Controller Plugin-->
+			<plugin
+				filename="libControllerPlugin.so"
+				name="ControllerPlugin::Controller">
+			</plugin>
 			<uri>miniArm_URDF/urdf/miniarm_collision_test.urdf</uri>
 			<!-- Set the instance name; used below when fixing to world -->
 			<name>miniarm</name>
-			<pose>0 0 0.02 0 0 0</pose>
+			<pose>0 0 0.04 0 0 0</pose>
 		</include>
 
 		<!-- Weld the robot base link to the world frame so it is fixed at (0,0,0) -->

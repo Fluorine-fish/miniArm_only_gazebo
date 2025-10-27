@@ -1,0 +1,3 @@
+std_msgs/String joint_name
+float64 joint_position
+float64 joint_velocity

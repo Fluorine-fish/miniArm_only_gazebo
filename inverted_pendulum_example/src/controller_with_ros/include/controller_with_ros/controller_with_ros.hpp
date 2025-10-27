@@ -138,11 +138,6 @@ private:
                 _ecm.CreateComponent(ent, gz::sim::components::JointVelocity());
                 std::cout << "[ControllerPlugin] created JointVelocity component for entity " << ent << '\n';
             }
-
-            if (!_ecm.Component<gz::sim::components::JointForce>(ent)) {
-                _ecm.CreateComponent(ent, gz::sim::components::JointForce());
-                std::cout << "[ControllerPlugin] created JointForce component for entity " << ent << '\n';
-            }
         }
     }
 
