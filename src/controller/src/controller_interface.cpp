@@ -45,6 +45,33 @@ void ControllerPlugin::Controller::SetJointPosition(gz::sim::EntityComponentMana
     }
 }
 
+void ControllerPlugin::Controller::SetJointForce(gz::sim::EntityComponentManager &_ecm,
+                                                    const std::array<double, 6> &target_froce) {
+    std::cout << "[Controller_Plugin] Joint Force reset\n";
+
+    for(const auto &name : this->joint_names_){
+        const auto &joint_ent = this->jointEntities_[name];
+        auto *reset = _ecm.Component<gz::sim::components::JointPositionReset>(joint_ent);
+        int index = name[5] - '0' - 1;
+        if (!reset) {
+            _ecm.CreateComponent(joint_ent, 
+            gz::sim::components::JointPositionReset({target_froce[index]}));
+        }else{
+            auto &data = reset->Data();
+            if(data.empty()) {
+                data.push_back(target_froce[index]);
+            }else{
+                data[0] = target_froce[index];
+            }
+        }
+        _ecm.SetChanged(joint_ent, 
+                    gz::sim::components::JointPositionReset::typeId,
+                    gz::sim::ComponentState::OneTimeChange);
+        std::cout << "[Controller_Plugin] Joint "<< name <<"'s Force reset!\n";
+    }
+}
+
+
 void ControllerPlugin::Controller::CacheJointEntities
     (gz::sim::EntityComponentManager &_ecm) {
     _ecm.Each<gz::sim::components::Joint, gz::sim::components::Name>(

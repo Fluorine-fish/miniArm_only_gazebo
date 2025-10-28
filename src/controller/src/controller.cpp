@@ -48,6 +48,12 @@ void ControllerPlugin::Controller::Configure(const gz::sim::Entity &,
             executor_->spin();
         }
     );
+
+    // 创建Arm对象
+    this->Arm_ = std::make_shared<ArmClass>(
+            std::array<double, 6>{0,0,0.5,0,0,0},
+            this->joint_names_);
+    this->Arm_->SetController(this);
 }
 
 void ControllerPlugin::Controller::PreUpdate
@@ -57,7 +63,11 @@ void ControllerPlugin::Controller::PreUpdate
         this->CacheJointEntities(_ecm);
 
     this->EnsureStateComponents(_ecm);
-    this->Arm_->Update();
+
+    if (!this->Arm_->_is_initialed) {
+        this->Arm_->ArmJointPositionInit(_ecm);
+    }
+    this->Arm_->Update(_ecm);
 };
 
 void ControllerPlugin::Controller::PostUpdate

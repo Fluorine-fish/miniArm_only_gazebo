@@ -11,6 +11,9 @@ public:
     virtual void SetJointPosition(gz::sim::EntityComponentManager &ecm,
                                   const std::array<double, 6> &target_q) = 0;
 
+    virtual void SetJointForce(gz::sim::EntityComponentManager &ecm,
+                               const std::array<double, 6> &target_force) = 0;
+
     virtual void CacheJointEntities(gz::sim::EntityComponentManager &ecm) = 0;
 
     virtual void EnsureStateComponents(gz::sim::EntityComponentManager &ecm) = 0;

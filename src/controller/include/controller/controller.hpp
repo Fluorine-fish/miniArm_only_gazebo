@@ -31,17 +31,7 @@ namespace ControllerPlugin {
         public ControllerInterface,
         public std::enable_shared_from_this<Controller> {
 public:
-    Controller() {
-        std::shared_ptr<Controller> self_shared;
-        try {
-            self_shared = this->shared_from_this(); // 正常情况：插件由 shared_ptr 管理
-        } catch (const std::bad_weak_ptr &) {
-            self_shared = std::shared_ptr<Controller>(this, [](Controller*){/* non-owning */});
-        }
-        this->Arm_ = std::make_shared<ArmClass>(
-            std::array<double, 6>{0,0,0,0,0,0},
-            this->joint_names_, self_shared);
-    }
+    Controller() { };
 
     void Configure(const gz::sim::Entity &,
                    const std::shared_ptr<const sdf::Element> &,
@@ -55,6 +45,9 @@ public:
                     const gz::sim::EntityComponentManager &_ecm) override;
     void SetJointPosition(gz::sim::EntityComponentManager &_ecm, 
                           const std::array<double, 6> &target_q) override;
+
+    void SetJointForce(gz::sim::EntityComponentManager &_ecm,
+                                const std::array<double, 6> &target_froce) override;
 
     void CacheJointEntities(gz::sim::EntityComponentManager &_ecm) override;
 
