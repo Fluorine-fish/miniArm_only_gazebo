@@ -79,7 +79,7 @@
 				filename="libControllerPlugin.so"
 				name="ControllerPlugin::Controller">
 			</plugin>
-			<uri>miniArm_URDF/urdf/miniarm_collision_test.urdf</uri>
+			<uri>model/miniArm_URDF/urdf/miniarm_collision_test.urdf</uri>
 			<!-- Set the instance name; used below when fixing to world -->
 			<name>miniarm</name>
 			<pose>0 0 0.04 0 0 0</pose>

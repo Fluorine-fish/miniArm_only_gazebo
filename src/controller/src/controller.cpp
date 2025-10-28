@@ -1,4 +1,3 @@
-#include <functional>
 #include <gz/sim/Entity.hh>
 #include <gz/sim/System.hh>
 #include <gz/plugin/Register.hh>
@@ -6,8 +5,6 @@
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/Types.hh>
 #include <gz/sim/components.hh>
-#include <gz/sim/components/Joint.hh>
-#include <gz/sim/components/JointForce.hh>
 #include <gz/sim/components/Name.hh>
 
 #include <iostream>
@@ -82,8 +79,8 @@ void ControllerPlugin::Controller::PostUpdate
         controller::msg::JointState joint_state;
 
         joint_state.joint_name.data = "Null";
-        joint_state.joint_name.data = 0.0;
-        joint_state.joint_name.data = 0.0;
+        joint_state.joint_position = 0.0;
+        joint_state.joint_velocity= 0.0;
         // 读取Name
         if (!name.empty()) {
             joint_state.joint_name.data = name;
@@ -94,6 +91,7 @@ void ControllerPlugin::Controller::PostUpdate
             if (!vector_.empty()) {
                 double q = vector_[0];
                 joint_state.joint_position = q;
+                jointPosition_[name] = q;
             }
         }
 
@@ -103,6 +101,7 @@ void ControllerPlugin::Controller::PostUpdate
             if (!vector_.empty()) {
                 double q_dot = vector_[0];
                 joint_state.joint_velocity = q_dot;
+                jointVelocity_[name] = q_dot;
             }
         }
 
@@ -117,53 +116,6 @@ void ControllerPlugin::Controller::PostUpdate
     }
 
     this->joint_state_pub_->publish(msg);
-};
-
-void ControllerPlugin::Controller::CacheJointEntities
-    (gz::sim::EntityComponentManager &_ecm) {
-    _ecm.Each<gz::sim::components::Joint, gz::sim::components::Name>(
-        [&](const gz::sim::Entity &_ent,
-            const gz::sim::components::Joint *,
-            const gz::sim::components::Name *_name)->bool
-        {
-            if (!_name) return true;
-            const std::string n = _name->Data();
-            for (const auto &t : this->joint_names_) {
-                if (n == t ||
-                    (n.size() >= t.size() && n.compare(n.size() - t.size(), t.size(), t) == 0) ||
-                    (n.find(t) != std::string::npos)
-                ) {
-                    this->jointEntities_[t] = _ent;
-                    std::cout << "[ControllerPlugin] cached " << t << " -> " << _ent << '\n';
-                    break;
-                }
-            }
-            return true;
-        }
-    );
-};
-// 确保每一个joint对象准备好插件交互的component
-void ControllerPlugin::Controller::EnsureStateComponents
-    (gz::sim::EntityComponentManager &_ecm){
-        for (const auto &ent_ : this->jointEntities_)
-        {
-            const auto &ent = ent_.second;
-
-            if (!_ecm.Component<gz::sim::components::JointPosition>(ent)) {
-                _ecm.CreateComponent(ent, gz::sim::components::JointPosition());
-                std::cout << "[ControllerPlugin] created JointPosition component for entity " << ent << '\n';
-            }
-
-            if (!_ecm.Component<gz::sim::components::JointVelocity>(ent)) {
-                _ecm.CreateComponent(ent, gz::sim::components::JointVelocity());
-                std::cout << "[ControllerPlugin] created JointVelocity component for entity " << ent << '\n';
-            }
-
-            if (!_ecm.Component<gz::sim::components::JointForce>(ent)) {
-                _ecm.CreateComponent(ent, gz::sim::components::JointForce());
-                std::cout << "[ControllerPlugin] created JointForce component for entity " << ent << '\n';
-            }
-        }
 };
 
 GZ_ADD_PLUGIN(
