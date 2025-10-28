@@ -1,7 +1,6 @@
 #include <array>
 #include <gz/sim/Entity.hh>
 #include <gz/sim/System.hh>
-#include <gz/plugin/Register.hh>
 
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/Types.hh>
@@ -10,8 +9,6 @@
 #include <gz/sim/components/JointForceCmd.hh>
 #include <gz/sim/components/JointPositionReset.hh>
 #include <gz/sim/components/Name.hh>
-
-#include <iostream>
 
 #include "rclcpp/rclcpp.hpp"
 #include <memory>
@@ -31,12 +28,19 @@ namespace ControllerPlugin {
         public gz::sim::ISystemConfigure,
         public gz::sim::ISystemPreUpdate,
         public gz::sim::ISystemPostUpdate, 
-        public ControllerInterface {
+        public ControllerInterface,
+        public std::enable_shared_from_this<Controller> {
 public:
     Controller() {
-        this->Arm_ = std::make_shared<ArmClass<6>>(
+        std::shared_ptr<Controller> self_shared;
+        try {
+            self_shared = this->shared_from_this(); // 正常情况：插件由 shared_ptr 管理
+        } catch (const std::bad_weak_ptr &) {
+            self_shared = std::shared_ptr<Controller>(this, [](Controller*){/* non-owning */});
+        }
+        this->Arm_ = std::make_shared<ArmClass>(
             std::array<double, 6>{0,0,0,0,0,0},
-            this->joint_names_);
+            this->joint_names_, self_shared);
     }
 
     void Configure(const gz::sim::Entity &,
@@ -56,9 +60,9 @@ public:
 
     void EnsureStateComponents(gz::sim::EntityComponentManager &_ecm) override;
     
-    std::array<double, 6> GetJointPosition(gz::sim::EntityComponentManager &_ecm) override;
+    std::array<double, 6> GetJointPosition() override;
 
-    std::array<double, 6> GetJointVelocity(gz::sim::EntityComponentManager &_ecm) override;
+    std::array<double, 6> GetJointVelocity() override;
 
     ~Controller() {
         // 释放资源
@@ -85,6 +89,6 @@ public:
     rclcpp::Publisher<controller::msg::ArmState>::SharedPtr joint_state_pub_;
     bool owns_context_{false};
     //Arm
-    std::shared_ptr<ArmClass<>> Arm_;
+    std::shared_ptr<ArmClass> Arm_;
 };
 }

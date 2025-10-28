@@ -2,16 +2,20 @@
 #include <array>
 #include <gz/sim/EntityComponentManager.hh>
 
+// Note: Keep this interface in global namespace as used by current code.
 class ControllerInterface {
 public:
-    virtual void SetJointPosition(gz::sim::EntityComponentManager &_ecm, 
-                          const std::array<double, 6> &target_q);
-             
-    virtual void CacheJointEntities(gz::sim::EntityComponentManager &_ecm);
+    virtual ~ControllerInterface(); // out-of-line definition in .cpp ensures typeinfo exported
 
-    virtual void EnsureStateComponents(gz::sim::EntityComponentManager &_ecm);
+    // Pure-virtual interface methods implemented by Controller
+    virtual void SetJointPosition(gz::sim::EntityComponentManager &ecm,
+                                  const std::array<double, 6> &target_q) = 0;
 
-    virtual std::array<double, 6> GetJointPosition(gz::sim::EntityComponentManager &_ecm);
+    virtual void CacheJointEntities(gz::sim::EntityComponentManager &ecm) = 0;
 
-    virtual std::array<double, 6> GetJointVelocity(gz::sim::EntityComponentManager &_ecm);
+    virtual void EnsureStateComponents(gz::sim::EntityComponentManager &ecm) = 0;
+
+    virtual std::array<double, 6> GetJointPosition() = 0;
+
+    virtual std::array<double, 6> GetJointVelocity() = 0;
 };

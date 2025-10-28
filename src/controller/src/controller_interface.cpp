@@ -1,6 +1,6 @@
+#include "controller/controller_interface.hpp"
 #include <gz/sim/Entity.hh>
 #include <gz/sim/System.hh>
-#include <gz/plugin/Register.hh>
 
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/Types.hh>
@@ -10,9 +10,6 @@
 #include <iostream>
 #include <string>
 
-#include "controller/msg/arm_state.hpp"
-#include "controller/msg/joint_state.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include <rclcpp/executors/single_threaded_executor.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/utilities.hpp>
@@ -20,6 +17,7 @@
 
 #include <controller/controller.hpp>
 
+ControllerInterface::~ControllerInterface() = default;
 
 void ControllerPlugin::Controller::SetJointPosition(gz::sim::EntityComponentManager &_ecm,
                                                     const std::array<double, 6> &target_q) {
@@ -95,8 +93,26 @@ void ControllerPlugin::Controller::EnsureStateComponents
         }
 };
 
-std::array<double, 6> GetJointPosition(gz::sim::EntityComponentManager &_ecm) {
-    
+std::array<double, 6> ControllerPlugin::Controller::GetJointPosition() {
+    std::array<double, 6> joint_position = {};
+    joint_position[0] = this->jointPosition_["joint1"];
+    joint_position[1] = this->jointPosition_["joint2"];
+    joint_position[2] = this->jointPosition_["joint3"];
+    joint_position[3] = this->jointPosition_["joint4"];
+    joint_position[4] = this->jointPosition_["joint5"];
+    joint_position[5] = this->jointPosition_["joint6"];
+
+    return joint_position;
 };
 
-std::array<double, 6> GetJointVelocity(gz::sim::EntityComponentManager &_ecm) ;
+std::array<double, 6> ControllerPlugin::Controller::GetJointVelocity() {
+    std::array<double, 6> joint_velocity = {};
+    joint_velocity[0] = this->jointVelocity_["joint1"];
+    joint_velocity[1] = this->jointVelocity_["joint2"];
+    joint_velocity[2] = this->jointVelocity_["joint3"];
+    joint_velocity[3] = this->jointVelocity_["joint4"];
+    joint_velocity[4] = this->jointVelocity_["joint5"];
+    joint_velocity[5] = this->jointVelocity_["joint6"];
+
+    return joint_velocity;
+};

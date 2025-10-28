@@ -1,6 +1,5 @@
 #include <gz/sim/Entity.hh>
 #include <gz/sim/System.hh>
-#include <gz/plugin/Register.hh>
 
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/Types.hh>
@@ -17,6 +16,7 @@
 #include <rclcpp/node.hpp>
 #include <rclcpp/utilities.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
+#include <gz/plugin/Register.hh>
 
 #include <controller/controller.hpp>
 
@@ -57,6 +57,7 @@ void ControllerPlugin::Controller::PreUpdate
         this->CacheJointEntities(_ecm);
 
     this->EnsureStateComponents(_ecm);
+    this->Arm_->Update();
 };
 
 void ControllerPlugin::Controller::PostUpdate
@@ -127,6 +128,6 @@ GZ_ADD_PLUGIN(
 )
 
 GZ_ADD_PLUGIN_ALIAS(
-    ControllerPlugin::Controller, 
-    "ControllerPlugin"
+    ControllerPlugin::Controller,
+    "ControllerPlugin::Controller"
 )

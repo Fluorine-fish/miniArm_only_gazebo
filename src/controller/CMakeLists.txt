@@ -32,7 +32,10 @@ rosidl_get_typesupport_target(
     ${PROJECT_NAME} rosidl_typesupport_cpp
 )
 
-add_library(ControllerPlugin SHARED src/controller.cpp)
+add_library(ControllerPlugin SHARED 
+            src/controller.cpp  
+            src/arm.cpp 
+            src/controller_interface.cpp)
 target_link_libraries(ControllerPlugin
   gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER}
   ${cpp_typesupport_target}
@@ -61,4 +64,4 @@ install(TARGETS ControllerPlugin
   DESTINATION lib
 )
 
-ament_auto_package()
+ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)

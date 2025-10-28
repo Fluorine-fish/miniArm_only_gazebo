@@ -71,7 +71,6 @@
 		</light>
 
 
-
 		<!-- Include the mini arm URDF directly and place its frame at world origin -->
 		<include>
 			<!-- Controller Plugin-->

@@ -18,7 +18,7 @@ find_package(gz-sim${GZ_SIM_VER} REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 
-add_library(InvertedPendulumControllerPlugin SHARED src/controller_with_ros.cpp)
+add_library(InvertedPendulumControllerPlugin SHARED src/*.cpp)
 target_link_libraries(InvertedPendulumControllerPlugin
   gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER}
 )
