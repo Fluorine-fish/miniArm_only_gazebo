@@ -139,3 +139,25 @@ target_link_libraries(${PROJECT_NAME}_node
     ${cpp_typesupport_target}
 )
 ```
+
+## 10. 如果需要在一个插件中有多个cpp文件， 请只在包含plugin class的cpp文件内引用
+也就是说
+``` cpp
+#include <gz/plugin/Register.hh>
+``` 
+和
+```cpp
+GZ_ADD_PLUGIN(
+    ControllerPlugin::Controller,
+    gz::sim::System,
+    ControllerPlugin::Controller::ISystemConfigure,
+    ControllerPlugin::Controller::ISystemPostUpdate,
+    ControllerPlugin::Controller::ISystemPreUpdate
+)
+
+GZ_ADD_PLUGIN_ALIAS(
+    ControllerPlugin::Controller,
+    "ControllerPlugin::Controller"
+)
+```
+只能在一个插件中的一个cpp文件中存在，否则编译时会出现GZ宏多次引用报错

@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <gz/sim/System.hh>
 #include <memory>
 #include <rclcpp/subscription.hpp>
 #include <thread>
@@ -39,6 +40,16 @@ public:
                 "/Arm/joint_force_cmd", 10, 
                 [this](std_msgs::msg::Float64MultiArray::SharedPtr msg)
                 {this->ArmForceCmdCallback(msg);});
+        this->joint_velocity_sub_ = this->ros_node_
+            ->create_subscription<std_msgs::msg::Float64MultiArray>(
+                "/Arm/joint_velocity_cmd", 10, 
+                [this](std_msgs::msg::Float64MultiArray::SharedPtr msg)
+                {this->ArmVelocityCmdCallback(msg);});
+        this->drag_to_joint_position_sub_ = this->ros_node_
+            ->create_subscription<std_msgs::msg::Float64MultiArray>(
+                "/Arm/drag_to_joint_pisition_cmd", 10, 
+                [this](std_msgs::msg::Float64MultiArray::SharedPtr msg)
+                {this->ArmDragtoJointPositionCmdCallback(msg);});
         this->executor_->add_node(this->ros_node_);
 
         // spin ROS2 node
@@ -60,32 +71,61 @@ public:
             rclcpp::shutdown(); 
     };
 
+    // 直接调用cotroller_interface接口的底层方法
     void ArmPositionCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
+    void ArmVelocityCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg);
+
     void ArmForceCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg);
+
+    void ArmDragtoJointPositionCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
     void ArmPositionSet(gz::sim::EntityComponentManager &_ecm,
                         const std::array<double, 6> &target_q);
 
     void ArmForceSet(gz::sim::EntityComponentManager &_ecm,
+                            const std::array<double, 6> &target_q_dot);
+
+    void ArmVelocitySet(gz::sim::EntityComponentManager &_ecm,
                             const std::array<double, 6> &target_force);
 
     void ArmJointPositionInit(gz::sim::EntityComponentManager &_ecm);
 
+    void SetController(ControllerInterface* ctrl) { controller_ = ctrl; };
+
+    // 执行信息获取 以及底层接口调用
     void Update(gz::sim::EntityComponentManager &_ecm);
 
-    void SetController(ControllerInterface* ctrl) { controller_ = ctrl; };
+    // 进一步封装的高级接口
+
+    /**
+     * @brief 将机械臂的连杆拖动到轴坐标系指定位置，同时清空轴速度模拟静止释放
+     * 
+     * @param _ecm gz::sim::EntityComponentManage
+     * @param target_q 目标轴坐标位置
+     * @param is_velocity_rezero 是否归零速度
+     */
+    void DragToJointPosition(gz::sim::EntityComponentManager &_ecm,
+                            const std::array<double, 6> &target_q,
+                            const bool is_velocity_rezero = true);
 
     // ROS2 Node
     std::shared_ptr<rclcpp::Node> ros_node_;
     std::shared_ptr<rclcpp::executors::SingleThreadedExecutor>executor_;
     std::thread ros_spin_thread_;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr joint_position_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr joint_velocity_sub_;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr joint_force_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr drag_to_joint_position_sub_;
     bool owns_context_{false};
 
     bool _is_initialed{false};
+    bool _is_forcecmd_done{true};
+    bool _is_positioncmd_done{true};
+    bool _is_velocitycmd_done{true};
+    bool _is_dragcmd_done{true};
     std::array<double, 6> target_q_ {};
+    std::array<double, 6> target_q_dot_{};
     std::array<double, 6> target_q_froce_ {};
 private:
     std::array<double, 6> initial_q_ {};

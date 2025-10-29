@@ -71,6 +71,31 @@ void ControllerPlugin::Controller::SetJointForce(gz::sim::EntityComponentManager
     }
 }
 
+void ControllerPlugin::Controller::SetJointVelocity(gz::sim::EntityComponentManager &_ecm,
+                               const std::array<double, 6> &q_dot) {
+    std::cout << "[Controller_Plugin] Joint Velocity reset\n";
+
+    for(const auto &name : this->joint_names_){
+        const auto &joint_ent = this->jointEntities_[name];
+        auto *reset = _ecm.Component<gz::sim::components::JointVelocityReset>(joint_ent);
+        int index = name[5] - '0' - 1;
+        if (!reset) {
+            _ecm.CreateComponent(joint_ent, 
+            gz::sim::components::JointVelocityReset({q_dot[index]}));
+        }else{
+            auto &data = reset->Data();
+            if(data.empty()) {
+                data.push_back(q_dot[index]);
+            }else{
+                data[0] = q_dot[index];
+            }
+        }
+        _ecm.SetChanged(joint_ent, 
+                    gz::sim::components::JointVelocityReset::typeId,
+                    gz::sim::ComponentState::OneTimeChange);
+        std::cout << "[Controller_Plugin] Joint "<< name <<"'s Velocity reset!\n";
+    }
+}
 
 void ControllerPlugin::Controller::CacheJointEntities
     (gz::sim::EntityComponentManager &_ecm) {

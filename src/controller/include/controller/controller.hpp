@@ -49,6 +49,9 @@ public:
     void SetJointForce(gz::sim::EntityComponentManager &_ecm,
                                 const std::array<double, 6> &target_froce) override;
 
+    void SetJointVelocity(gz::sim::EntityComponentManager &_ecm,
+                               const std::array<double, 6> &target_q_dot) override;
+
     void CacheJointEntities(gz::sim::EntityComponentManager &_ecm) override;
 
     void EnsureStateComponents(gz::sim::EntityComponentManager &_ecm) override;

@@ -21,7 +21,7 @@ void ArmClass::ArmPositionCmdCallback(std_msgs::msg::Float64MultiArray::SharedPt
                 this->target_q_[i] = data[i];
             }
 
-            std::cout << "[Arm] Recieved Joint Position Cmd ...\n";
+            this->_is_positioncmd_done = false;
         }
     }
 };
@@ -34,10 +34,36 @@ void ArmClass::ArmForceCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr m
                 this->target_q_froce_[i] = data[i];
             }
 
-            std::cout << "[Arm] Recieved Joint Force Cmd ...\n";
+            this->_is_forcecmd_done = false;
         }
     }
 };
+
+void ArmClass::ArmVelocityCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg) {
+    if (msg) {
+        const auto &data = msg->data;
+        if (!data.empty() && data.size() == 6) {
+            for (int i = 0; i < 6; i++) {
+                this->target_q_dot_[i] = data[i];
+            }
+
+            this->_is_velocitycmd_done = false;
+        }
+    }
+};
+
+void ArmClass::ArmDragtoJointPositionCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg){
+    if (msg) {
+        const auto &data = msg->data;
+        if (!data.empty() && data.size() == 6) {
+            for (int i = 0; i < 6; i++) {
+                this->target_q_[i] = data[i];
+            }
+
+            this -> _is_dragcmd_done = false;
+        }
+    }
+}
 
 void ArmClass::ArmJointPositionInit(gz::sim::EntityComponentManager &_ecm) {
     if(!this->_is_initialed) {
@@ -46,14 +72,42 @@ void ArmClass::ArmJointPositionInit(gz::sim::EntityComponentManager &_ecm) {
     }
 };
 
+// 执行Arm的状态更新 以 及控制命令
 void ArmClass::Update(gz::sim::EntityComponentManager &_ecm) {
     this->now_q_ = this->controller_->GetJointPosition();
     this->now_q_dot_ = this->controller_->GetJointVelocity();
 
-    if (this->target_q_ != std::array<double, 6>{0.0,0.0,0.0,0.0,0.0,0.0}) {
+    if (!this->_is_positioncmd_done) {
         this->ArmPositionSet(_ecm, this->target_q_);
+        this->_is_positioncmd_done = true;
+    }
+
+    if (!this->_is_forcecmd_done) {
+        this->ArmForceSet(_ecm, this->target_q_froce_);
+        this->_is_forcecmd_done = true;
+    }
+
+    if (!this->_is_velocitycmd_done) {
+        this->ArmVelocitySet(_ecm, this->target_q_dot_);
+        this->_is_velocitycmd_done = true;
+    }
+
+    if (!this->_is_dragcmd_done) {
+        this->DragToJointPosition(_ecm, this->target_q_);
+        this->_is_dragcmd_done = true;
     }
 };
+
+void ArmClass::DragToJointPosition(gz::sim::EntityComponentManager &_ecm,
+                            const std::array<double, 6> &target_q,
+                            const bool is_velocity_rezero) {
+    this->ArmPositionSet(_ecm, target_q);
+    if (is_velocity_rezero) this->ArmVelocitySet(
+        _ecm, std::array<double, 6>{0,0,0,0,0,0});
+
+    std::cout << "[Arm] Drag to Target Joint Position!\n";
+}
+
 
 void ArmClass::ArmPositionSet(gz::sim::EntityComponentManager &_ecm,
                             const std::array<double, 6> &target_q) {
@@ -66,5 +120,12 @@ void ArmClass::ArmForceSet(gz::sim::EntityComponentManager &_ecm,
                             const std::array<double, 6> &target_force) {
     this->controller_->SetJointForce(_ecm, target_force);
 
-    std::cout << "[Controller_Plugin] Position setted!\n";
+    std::cout << "[Controller_Plugin] Force setted!\n";
+};
+
+void ArmClass::ArmVelocitySet(gz::sim::EntityComponentManager &_ecm,
+                            const std::array<double, 6> &target_q_dot) {
+    this->controller_->SetJointVelocity(_ecm, target_q_dot);
+
+    std::cout << "[Controller_Plugin] Velocity setted!\n";
 };
