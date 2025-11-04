@@ -1,0 +1,109 @@
+#include <array>
+#include <cstddef>
+#include <memory>
+#include <rclcpp/publisher_base.hpp>
+#include <rclcpp/subscription.hpp>
+#include <rclcpp/utilities.hpp>
+#include <string>
+#include <chrono>
+#include <vector>
+#include <algorithm>
+
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/float64_multi_array.hpp"
+#include "controller/msg/arm_state.hpp"
+#include "controller/msg/joint_state.hpp"
+
+#include "alg_calc/matrix.h"
+#include "alg_calc/robotics.h"
+#include "alg_calc/utils.h"
+
+using namespace std::chrono_literals;
+
+class AlgCalcNode : public rclcpp::Node {
+public:
+    AlgCalcNode()
+    : rclcpp::Node("alg_calc_node")
+    , centroid(RC)
+    , I{
+        matrixf::eye<3, 3>() * 1.0f,
+        matrixf::eye<3, 3>() * 1.0f,
+        matrixf::eye<3, 3>() * 1.0f,
+        matrixf::eye<3, 3>() * 1.0f,
+        matrixf::eye<3, 3>() * 1.0f,
+        matrixf::eye<3, 3>() * 1.0f,
+    }
+    , links{
+    robotics::Link(0, 0.09955, 0.0, -PI/2, robotics::R, 0.0,
+                    -PI, PI, mess[0], centroid.col(0), I[0]),
+    robotics::Link(0, 0.0,    0.14, PI,   robotics::R, -PI/2,
+                    -PI/2, PI/2, mess[1], centroid.col(1), I[1]),
+    robotics::Link(0, 0.0,    0.0,  -PI/2, robotics::R, -PI/2,
+                    -2.7925, 0.0, mess[2], centroid.col(2), I[2]),
+    robotics::Link(0, 0.153,  0.0,  PI/2,  robotics::R, 0.0,
+                    -PI/2, PI/2, mess[3], centroid.col(3), I[3]),
+    robotics::Link(0, 0.0,    0.0,  -PI/2, robotics::R, 0.0,
+                    -2.3561, 2.3561, mess[4], centroid.col(4), I[4]),
+    robotics::Link(0, 0.0875, 0.0,  0.0,   robotics::R, 0.0,
+                       -PI, PI, mess[5], centroid.col(5), I[5]),
+    }
+    , miniArm(links)
+    {
+        torque_pub_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("/Arm/joint_force_cmd", 10);
+        arm_state_sub_ = this->create_subscription<controller::msg::ArmState>(
+            "/controller/arm_state", 10,
+            [this](controller::msg::ArmState::SharedPtr msg) { this->subcription_callback(msg); });
+        timer_ = this->create_wall_timer(1ms, [this]() { this->timer_callback(); });
+    }
+
+    void timer_callback();
+    void subcription_callback(controller::msg::ArmState::SharedPtr msg);
+private:
+    rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr torque_pub_;
+    rclcpp::Subscription<controller::msg::ArmState>::SharedPtr arm_state_sub_;
+
+    float joint_q_[6]{};
+    Matrixf<6, 1> target_tor_{};
+    // link质量矩阵
+    float mess[6] = {1.32f,0.649f,0.642f, 0.493f, 0.488f, 0.009};
+    // link质心位置原始数据
+    float RC[18] = {-0.011f, -0.027f, -0.012f, 0.0f, 0.0f, 0.0f,
+                    0.038f, 0.0f, 0.008f, -0.02f, -0.08, 0.0f,
+                    0.008f, -0.069f, -0.015f, -0.005f, 0.05f, 0.012f};
+    // link质心位置矩阵
+    Matrixf<3, 6> centroid;
+    // link惯量矩阵
+    Matrixf<3, 3> I[6];
+    robotics::Link links[6];
+    robotics::Serial_Link<6> miniArm;
+};
+
+void AlgCalcNode::timer_callback() {
+    this->target_tor_ = this->miniArm.rne(matrixf::zeros<6, 1>());
+
+    std_msgs::msg::Float64MultiArray msg;
+    for (int i = 0; i < 6; i++) {
+        msg.data.push_back(this->target_tor_[i][0] / 2.0f);
+    }
+
+    this->torque_pub_->publish(msg);
+}
+
+void AlgCalcNode::subcription_callback(controller::msg::ArmState::SharedPtr msg) {
+    const auto &joints = msg->joints;
+    if (!joints.empty()) {
+        for (size_t i = 0; i < joints.size(); i++) {
+            joint_q_[i] = joints[i].joint_position;
+        }
+    }
+
+    RCLCPP_INFO(this->get_logger(), "JointState Updated!");
+}
+
+int main(int argc, char * argv[]) {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<AlgCalcNode>());
+    rclcpp::shutdown();
+    return 0;
+};
