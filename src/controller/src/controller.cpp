@@ -51,7 +51,7 @@ void ControllerPlugin::Controller::Configure(const gz::sim::Entity &,
 
     // 创建Arm对象
     this->Arm_ = std::make_shared<ArmClass>(
-            std::array<double, 6>{0,0,0.5,0,0,0},
+            std::array<double, 6>{0,0,0,0,0,0},
             this->joint_names_);
     this->Arm_->SetController(this);
 }
