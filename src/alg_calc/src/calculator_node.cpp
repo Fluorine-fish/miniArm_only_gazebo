@@ -36,7 +36,7 @@ public:
 
         this->_p_out = this->_kp * this->_err;
         this->_i_out = this->_ki * this->_err_sum;
-        this->_d_out = this->_kd * (this->_err - this->_last_err);
+        this->_d_out = - this->_kd * (this->_err - this->_last_err);
 
         this->_out = this->_p_out + this->_d_out + this->_i_out;
         this->_last_err = this->_err;
@@ -65,6 +65,22 @@ class AlgCalcNode : public rclcpp::Node {
 public:
     AlgCalcNode()
     : rclcpp::Node("alg_calc_node")
+    , joint_velocity_pid_{
+        PID_Class(1,0.1,1),
+        PID_Class(1,0.1,0.5),
+        PID_Class(1,0.1,0),
+        PID_Class(0.5,0.05,0),
+        PID_Class(1.5,0.05,0),
+        PID_Class(0.5,0.05,0),
+    }
+    , joint_position_pid_{
+        PID_Class(10,0.1,1),
+        PID_Class(15,0.1,0.5),
+        PID_Class(5,0.1,0),
+        PID_Class(0.5,0.05,0),
+        PID_Class(1.5,0.05,0),
+        PID_Class(0.5,0.05,0),
+    }
     , centroid(RC)
     , I{
         matrixf::eye<3, 3>() * 1.0f,
@@ -104,6 +120,8 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr torque_pub_;
     rclcpp::Subscription<controller::msg::ArmState>::SharedPtr arm_state_sub_;
 
+    PID_Class joint_velocity_pid_[6];
+    PID_Class joint_position_pid_[6];
     float joint_q_[6]{};
     Matrixf<6, 1> target_tor_{};
     // link质量矩阵
@@ -121,8 +139,16 @@ private:
 };
 
 void AlgCalcNode::timer_callback() {
+    // 计算重力补偿前馈
     this->target_tor_ = this->miniArm.rne(this->joint_q_);
+    // 计算PID
+    for(int i = 0; i < 6; i++) {
+        this->target_tor_[i][0] += 
+            this->joint_velocity_pid_[i].PID_Calc(
+                this->joint_position_pid_[i].PID_Calc(0.0,this->joint_q_[i]), this->joint_q_[i]);   
+    }
 
+    // 打包msg
     std_msgs::msg::Float64MultiArray msg;
     for (int i = 0; i < 6; i++) {
         msg.data.push_back(this->target_tor_[i][0]);
