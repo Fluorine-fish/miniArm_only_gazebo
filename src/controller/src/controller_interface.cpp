@@ -46,28 +46,28 @@ void ControllerPlugin::Controller::SetJointPosition(gz::sim::EntityComponentMana
 }
 
 void ControllerPlugin::Controller::SetJointForce(gz::sim::EntityComponentManager &_ecm,
-                                                    const std::array<double, 6> &target_froce) {
-    std::cout << "[Controller_Plugin] Joint Force reset\n";
+                                                    const std::array<double, 6> &target_force) {
+    std::cout << "[Controller_Plugin] Joint Force command\n";
 
     for(const auto &name : this->joint_names_){
         const auto &joint_ent = this->jointEntities_[name];
-        auto *reset = _ecm.Component<gz::sim::components::JointPositionReset>(joint_ent);
+        auto *cmd = _ecm.Component<gz::sim::components::JointForceCmd>(joint_ent);
         int index = name[5] - '0' - 1;
-        if (!reset) {
-            _ecm.CreateComponent(joint_ent, 
-            gz::sim::components::JointPositionReset({target_froce[index]}));
-        }else{
-            auto &data = reset->Data();
-            if(data.empty()) {
-                data.push_back(target_froce[index]);
-            }else{
-                data[0] = target_froce[index];
+        if (!cmd) {
+            _ecm.CreateComponent(joint_ent,
+                gz::sim::components::JointForceCmd({target_force[index]}));
+        } else {
+            auto &data = cmd->Data();
+            if (data.empty()) {
+                data.push_back(target_force[index]);
+            } else {
+                data[0] = target_force[index];
             }
         }
-        _ecm.SetChanged(joint_ent, 
-                    gz::sim::components::JointPositionReset::typeId,
+        _ecm.SetChanged(joint_ent,
+                    gz::sim::components::JointForceCmd::typeId,
                     gz::sim::ComponentState::OneTimeChange);
-        std::cout << "[Controller_Plugin] Joint "<< name <<"'s Force reset!\n";
+        std::cout << "[Controller_Plugin] Joint "<< name <<" force cmd set\n";
     }
 }
 

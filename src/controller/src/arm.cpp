@@ -1,6 +1,7 @@
 #include <array>
 #include <gz/sim/Entity.hh>
 #include <gz/sim/System.hh>
+#include <gz/sim/components/World.hh>
 
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/Types.hh>
@@ -73,7 +74,8 @@ void ArmClass::ArmJointPositionInit(gz::sim::EntityComponentManager &_ecm) {
 };
 
 // 执行Arm的状态更新 以 及控制命令
-void ArmClass::Update(gz::sim::EntityComponentManager &_ecm) {
+void ArmClass::Update(const gz::sim::UpdateInfo &_info,
+    gz::sim::EntityComponentManager &_ecm) {
     this->now_q_ = this->controller_->GetJointPosition();
     this->now_q_dot_ = this->controller_->GetJointVelocity();
 
@@ -82,19 +84,21 @@ void ArmClass::Update(gz::sim::EntityComponentManager &_ecm) {
         this->_is_positioncmd_done = true;
     }
 
-    if (!this->_is_forcecmd_done) {
-        this->ArmForceSet(_ecm, this->target_q_froce_);
-        this->_is_forcecmd_done = true;
-    }
-
-    if (!this->_is_velocitycmd_done) {
-        this->ArmVelocitySet(_ecm, this->target_q_dot_);
-        this->_is_velocitycmd_done = true;
-    }
-
     if (!this->_is_dragcmd_done) {
         this->DragToJointPosition(_ecm, this->target_q_);
         this->_is_dragcmd_done = true;
+    }
+
+    // 暂停则力命令不更新
+    if (!_info.paused){
+        if (!this->_is_forcecmd_done) {
+            this->ArmForceSet(_ecm, this->target_q_froce_);
+        }
+
+        if (!this->_is_velocitycmd_done) {
+            this->ArmVelocitySet(_ecm, this->target_q_dot_);
+            this->_is_velocitycmd_done = true;
+        }
     }
 };
 

@@ -57,7 +57,7 @@ void ControllerPlugin::Controller::Configure(const gz::sim::Entity &,
 }
 
 void ControllerPlugin::Controller::PreUpdate
-    (const gz::sim::UpdateInfo &,
+    (const gz::sim::UpdateInfo &_info,
         gz::sim::EntityComponentManager &_ecm){
     if (this->jointEntities_.size() < this->joint_names_.size())
         this->CacheJointEntities(_ecm);
@@ -67,7 +67,7 @@ void ControllerPlugin::Controller::PreUpdate
     if (!this->Arm_->_is_initialed) {
         this->Arm_->ArmJointPositionInit(_ecm);
     }
-    this->Arm_->Update(_ecm);
+    this->Arm_->Update(_info,_ecm);
 };
 
 void ControllerPlugin::Controller::PostUpdate

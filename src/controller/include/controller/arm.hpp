@@ -94,7 +94,8 @@ public:
     void SetController(ControllerInterface* ctrl) { controller_ = ctrl; };
 
     // 执行信息获取 以及底层接口调用
-    void Update(gz::sim::EntityComponentManager &_ecm);
+    void Update(const gz::sim::UpdateInfo &_info,
+        gz::sim::EntityComponentManager &_ecm);
 
     // 进一步封装的高级接口
 

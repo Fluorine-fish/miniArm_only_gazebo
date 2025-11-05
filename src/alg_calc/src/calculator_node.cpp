@@ -20,6 +20,47 @@
 
 using namespace std::chrono_literals;
 
+class PID_Class {
+public:
+    PID_Class(const double &kp, const double &ki, const double &kd) 
+    : _kp{kp}, _kd(kd), _ki(ki){ };
+
+    double PID_Calc(const double &target, const double &now) {
+        this->_now = now;
+        this->_target = target; 
+        this->_err = this->_target - this->_now;
+
+        if (!(abs(_err_sum + _err) > this->_i_sum_max) && this->_ki != 0.0) {
+            this->_err_sum += this->_err;
+        }
+
+        this->_p_out = this->_kp * this->_err;
+        this->_i_out = this->_ki * this->_err_sum;
+        this->_d_out = this->_kd * (this->_err - this->_last_err);
+
+        this->_out = this->_p_out + this->_d_out + this->_i_out;
+        this->_last_err = this->_err;
+
+        return this->_out;
+    };
+
+    double _target{0.0};
+    double _now{0.0};
+    double _err{0.0};
+    double _last_err{0.0};
+    double _err_sum{0.0};
+
+    double _out{0.0};
+    double _p_out{0.0};
+    double _d_out{0.0};
+    double _i_out{0.0};
+    double _i_sum_max{3.0};
+
+    double _kp;
+    double _kd;
+    double _ki;
+};
+
 class AlgCalcNode : public rclcpp::Node {
 public:
     AlgCalcNode()
@@ -80,11 +121,11 @@ private:
 };
 
 void AlgCalcNode::timer_callback() {
-    this->target_tor_ = this->miniArm.rne(matrixf::zeros<6, 1>());
+    this->target_tor_ = this->miniArm.rne(this->joint_q_);
 
     std_msgs::msg::Float64MultiArray msg;
     for (int i = 0; i < 6; i++) {
-        msg.data.push_back(this->target_tor_[i][0] / 2.0f);
+        msg.data.push_back(this->target_tor_[i][0]);
     }
 
     this->torque_pub_->publish(msg);

@@ -160,4 +160,20 @@ GZ_ADD_PLUGIN_ALIAS(
     "ControllerPlugin::Controller"
 )
 ```
-只能在一个插件中的一个cpp文件中存在，否则编译时会出现GZ宏多次引用报错
+只能在一个插件中的一个cpp文件中存在，否则编译时会出现GZ宏多次引用报错‘
+
+## 11. gazeboUI的PAUSE按钮只能暂停物理引擎的作用，无法终止插件的运行
+- 如果需要在暂停时终止插件的运行，请在PreUpdate中添加判断
+- 使用plugin接口的UpdateInfo结构体中的paused变量进行判断
+``` cpp
+if (!_info.paused){
+    if (!this->_is_forcecmd_done) {
+        this->ArmForceSet(_ecm, this->target_q_froce_);
+    }
+
+    if (!this->_is_velocitycmd_done) {
+        this->ArmVelocitySet(_ecm, this->target_q_dot_);
+        this->_is_velocitycmd_done = true;
+    }
+}
+```
