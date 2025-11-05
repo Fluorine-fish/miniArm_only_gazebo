@@ -1,0 +1,4 @@
+[submodule "MC02/Phoenix_Lib"]
+	path = MC02/Phoenix_Lib
+	url = git@github.com:HDU-PHOENIX/phoenix_embedded_base_code.git
+	branch = main
