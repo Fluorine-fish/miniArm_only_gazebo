@@ -48,6 +48,7 @@
 
 /* USER CODE END Variables */
 osThreadId Debug_TaskHandle;
+osThreadId Alg_CalcHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -55,6 +56,7 @@ osThreadId Debug_TaskHandle;
 /* USER CODE END FunctionPrototypes */
 
 void App_DebugTask(void const * argument);
+extern void App_AlgCalc(void const * argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -121,6 +123,10 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of Debug_Task */
   osThreadDef(Debug_Task, App_DebugTask, osPriorityHigh, 0, 1024);
   Debug_TaskHandle = osThreadCreate(osThread(Debug_Task), NULL);
+
+  /* definition and creation of Alg_Calc */
+  osThreadDef(Alg_Calc, App_AlgCalc, osPriorityRealtime, 0, 1024);
+  Alg_CalcHandle = osThreadCreate(osThread(Alg_Calc), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

@@ -48,11 +48,21 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(${includes})
+include_directories(${includes}
+                    User_Lib/Robotics
+                    Application
+                    Phoenix_Lib/Module/Minipc
+                    Phoenix_Lib/Bsp/Log
+                    Jlink_RTT)
 
 add_definitions(${defines})
 
-file(GLOB_RECURSE SOURCES ${sources})
+file(GLOB_RECURSE SOURCES ${sources}
+                     "User_Lib/*.*"
+                     "Application/*.*"
+                     "Phoenix_Lib/Module/Minipc/*.*"
+                     "Jlink_RTT/*.*"
+                     "Phoenix_Lib/Bsp/Log/*.*")
 
 set(LINKER_SCRIPT $${CMAKE_SOURCE_DIR}/${linkerScript})
 
@@ -61,6 +71,9 @@ add_link_options(-mcpu=${mcpu} -mthumb -mthumb-interwork)
 add_link_options(-T $${LINKER_SCRIPT})
 
 add_executable($${PROJECT_NAME}.elf $${SOURCES} $${LINKER_SCRIPT})
+
+# 把ARM DSP库链接到上面的可执行文件
+target_link_libraries(${PROJECT_NAME}.elf ${CMAKE_SOURCE_DIR}/Middlewares/ST/ARM/DSP/Lib/GCC/libarm_cortexM7lfsp_math.a)
 
 set(HEX_FILE $${PROJECT_BINARY_DIR}/$${PROJECT_NAME}.hex)
 set(BIN_FILE $${PROJECT_BINARY_DIR}/$${PROJECT_NAME}.bin)
