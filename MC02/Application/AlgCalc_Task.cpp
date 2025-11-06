@@ -1,7 +1,6 @@
 #include "AlgCalc_Task.h"
 #include "matrix.h"
 #include "robotics.h"
-#include "Debug_task.h"
 #include "cmsis_os.h"
 
 #include "stm32h7xx_hal.h"
