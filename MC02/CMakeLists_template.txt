@@ -50,8 +50,8 @@ endif ()
 
 include_directories(${includes}
                     User_Lib/Robotics
+                    User_Lib/USB
                     Application
-                    Phoenix_Lib/Module/Minipc
                     Phoenix_Lib/Bsp/Log
                     Jlink_RTT)
 
@@ -60,7 +60,6 @@ add_definitions(${defines})
 file(GLOB_RECURSE SOURCES ${sources}
                      "User_Lib/*.*"
                      "Application/*.*"
-                     "Phoenix_Lib/Module/Minipc/*.*"
                      "Jlink_RTT/*.*"
                      "Phoenix_Lib/Bsp/Log/*.*")
 

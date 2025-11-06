@@ -51,8 +51,8 @@ endif ()
 
 include_directories(Core/Inc USB_DEVICE/App USB_DEVICE/Target Drivers/STM32H7xx_HAL_Driver/Inc Drivers/STM32H7xx_HAL_Driver/Inc/Legacy Middlewares/Third_Party/FreeRTOS/Source/include Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F Middlewares/ST/STM32_USB_Device_Library/Core/Inc Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc Drivers/CMSIS/Device/ST/STM32H7xx/Include Drivers/CMSIS/Include Middlewares/ST/ARM/DSP/Inc
                     User_Lib/Robotics
+                    User_Lib/USB
                     Application
-                    Phoenix_Lib/Module/Minipc
                     Phoenix_Lib/Bsp/Log
                     Jlink_RTT)
 
@@ -61,7 +61,6 @@ add_definitions(-DDEBUG -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx)
 file(GLOB_RECURSE SOURCES "Core/*.*" "Middlewares/*.*" "USB_DEVICE/*.*" "Drivers/*.*"
                      "User_Lib/*.*"
                      "Application/*.*"
-                     "Phoenix_Lib/Module/Minipc/*.*"
                      "Jlink_RTT/*.*"
                      "Phoenix_Lib/Bsp/Log/*.*")
 
