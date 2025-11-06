@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "bsp_log.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,51 +47,46 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-osThreadId Debug_TaskHandle;
-osThreadId Alg_CalcHandle;
+/* Definitions for Debug_Task */
+osThreadId_t Debug_TaskHandle;
+const osThreadAttr_t Debug_Task_attributes = {
+  .name = "Debug_Task",
+  .stack_size = 2048 * 4,
+  .priority = (osPriority_t) osPriorityHigh,
+};
+/* Definitions for Alg_Calc */
+osThreadId_t Alg_CalcHandle;
+const osThreadAttr_t Alg_Calc_attributes = {
+  .name = "Alg_Calc",
+  .stack_size = 2048 * 4,
+  .priority = (osPriority_t) osPriorityHigh,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
 /* USER CODE END FunctionPrototypes */
 
-void App_DebugTask(void const * argument);
-extern void App_AlgCalc(void const * argument);
+void App_DebugTask(void *argument);
+extern void App_AlgCalc(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
-/* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+/* Hook prototypes */
+void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName);
 
-/* GetTimerTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize );
-
-/* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
-static StaticTask_t xIdleTaskTCBBuffer;
-static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
-
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+/* USER CODE BEGIN 4 */
+void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 {
-  *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
-  *ppxIdleTaskStackBuffer = &xIdleStack[0];
-  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
-  /* place for user code */
+   /* Run time stack overflow checking is performed if
+   configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
+   called if a stack overflow is detected. */
+  Log_Error("Stack Overflow Occured: ", xTask);
+  taskDISABLE_INTERRUPTS();
+  for(;;);
 }
-/* USER CODE END GET_IDLE_TASK_MEMORY */
-
-/* USER CODE BEGIN GET_TIMER_TASK_MEMORY */
-static StaticTask_t xTimerTaskTCBBuffer;
-static StackType_t xTimerStack[configTIMER_TASK_STACK_DEPTH];
-
-void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )
-{
-  *ppxTimerTaskTCBBuffer = &xTimerTaskTCBBuffer;
-  *ppxTimerTaskStackBuffer = &xTimerStack[0];
-  *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
-  /* place for user code */
-}
-/* USER CODE END GET_TIMER_TASK_MEMORY */
+/* USER CODE END 4 */
 
 /**
   * @brief  FreeRTOS initialization
@@ -120,17 +115,19 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of Debug_Task */
-  osThreadDef(Debug_Task, App_DebugTask, osPriorityHigh, 0, 1024);
-  Debug_TaskHandle = osThreadCreate(osThread(Debug_Task), NULL);
+  /* creation of Debug_Task */
+  Debug_TaskHandle = osThreadNew(App_DebugTask, NULL, &Debug_Task_attributes);
 
-  /* definition and creation of Alg_Calc */
-  osThreadDef(Alg_Calc, App_AlgCalc, osPriorityRealtime, 0, 1024);
-  Alg_CalcHandle = osThreadCreate(osThread(Alg_Calc), NULL);
+  /* creation of Alg_Calc */
+  Alg_CalcHandle = osThreadNew(App_AlgCalc, NULL, &Alg_Calc_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
 
 }
 
@@ -141,7 +138,7 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_App_DebugTask */
-__weak void App_DebugTask(void const * argument)
+__weak void App_DebugTask(void *argument)
 {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
@@ -158,3 +155,4 @@ __weak void App_DebugTask(void const * argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
+
