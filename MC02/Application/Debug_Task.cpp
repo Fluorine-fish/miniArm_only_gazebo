@@ -8,7 +8,7 @@ void App_DebugTask(void const * argument) {
     MX_USB_DEVICE_Init();
 
     while (1) {
-        // USB_Task();
+        USB_Task();
         osDelay(1);
     }
 }

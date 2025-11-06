@@ -65,6 +65,8 @@ Matrixf<6,1> Tor;
 float us;
 float target_q[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
+UBaseType_t highwater = 0;
+
 void App_AlgCalc(void const * argument) {
 
     DWT_Init();
@@ -72,18 +74,20 @@ void App_AlgCalc(void const * argument) {
     while (1) {
 
         // 生成随机序列
-        // target_q[0] = randomFloat(-3.1415, 3.1415, 0);
-        // target_q[1] = randomFloat(-0.3, 1.1570, 1);
-        // target_q[2] = randomFloat(-2.6, 1.1570, 2);
-        // target_q[3] = randomFloat(-2.6, 0.0, 3);
-        // target_q[4] = randomFloat(-1.2, 1.2, 4);
-        // target_q[5] = randomFloat(-3.1415, 3.1415, 5);
+        target_q[0] = randomFloat(-3.1415, 3.1415, 0);
+        target_q[1] = randomFloat(-0.3, 1.1570, 1);
+        target_q[2] = randomFloat(-2.6, 1.1570, 2);
+        target_q[3] = randomFloat(-2.6, 0.0, 3);
+        target_q[4] = randomFloat(-1.2, 1.2, 4);
+        target_q[5] = randomFloat(-3.1415, 3.1415, 5);
 
         uint32_t start = DWT_GetCycle();
         Tor = miniArm.rne(target_q);
         uint32_t end = DWT_GetCycle();
 
         us = DWT_GetMicroseconds(start, end);
+
+        highwater = uxTaskGetStackHighWaterMark(NULL);
         osDelay(1);
     }
 }

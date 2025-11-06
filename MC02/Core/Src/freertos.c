@@ -30,7 +30,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+uint16_t overflow_cnt = 0;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -51,15 +51,15 @@
 osThreadId_t Debug_TaskHandle;
 const osThreadAttr_t Debug_Task_attributes = {
   .name = "Debug_Task",
-  .stack_size = 2048 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for Alg_Calc */
 osThreadId_t Alg_CalcHandle;
 const osThreadAttr_t Alg_Calc_attributes = {
   .name = "Alg_Calc",
-  .stack_size = 2048 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 3072 * 4,
+  .priority = (osPriority_t) osPriorityRealtime,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -83,6 +83,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
    called if a stack overflow is detected. */
   Log_Error("Stack Overflow Occured: ", xTask);
+  overflow_cnt++;
   taskDISABLE_INTERRUPTS();
   for(;;);
 }
