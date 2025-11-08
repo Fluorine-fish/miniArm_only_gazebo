@@ -74,7 +74,7 @@ void App_AlgCalc(void const * argument) {
 
     while (1) {
 
-        // 生成随机序列
+        //生成随机序列
         FeedBack_Position[0] = randomFloat(-3.1415, 3.1415, 0);
         FeedBack_Position[1] = randomFloat(-0.3, 1.1570, 1);
         FeedBack_Position[2] = randomFloat(-2.6, 1.1570, 2);
@@ -89,6 +89,7 @@ void App_AlgCalc(void const * argument) {
         us = DWT_GetMicroseconds(start, end);
 
         for (uint8_t i = 0; i < 6; i++) {
+            FeedForward_Torque[i][0] += 2.0f;
             JointTorque[i] = FeedForward_Torque[i][0];
         }
 

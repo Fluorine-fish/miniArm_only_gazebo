@@ -132,7 +132,7 @@ void USB_Data::CPP_USBData_GetData(uint8_t* Buf, uint32_t* Len) {
 void USB_Data::CPP_USBData_SendMsg(uint32_t *Data) {
     msg_to_minipc.start = 's';
     msg_to_minipc.end = 'e';
-    msg_to_minipc.datatype = 0xBE; // 下位机发送数据类型
+    msg_to_minipc.datatype = 0xC2; // 下位机发送数据类型
 
     msg_to_minipc.data[0] = Data[0];
     msg_to_minipc.data[1] = Data[1];
