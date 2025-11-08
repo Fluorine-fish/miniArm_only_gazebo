@@ -5,7 +5,9 @@
 
 void App_DebugTask(void const * argument) {
 
+    // USB设备初始化
     MX_USB_DEVICE_Init();
+    USBData_init();
 
     while (1) {
         USB_Task();

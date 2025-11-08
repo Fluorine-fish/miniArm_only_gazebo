@@ -21,6 +21,7 @@
 #include "controller/msg/arm_state.hpp"
 #include "controller/arm.hpp"
 #include "controller/controller_interface.hpp"
+#include "std_msgs/msg/float64_multi_array.hpp"
 
 namespace ControllerPlugin {
     class Controller :
@@ -41,7 +42,7 @@ public:
     void PreUpdate(const gz::sim::UpdateInfo &,
                    gz::sim::EntityComponentManager &_ecm) override;
 
-    void PostUpdate(const gz::sim::UpdateInfo &,
+    void PostUpdate(const gz::sim::UpdateInfo &_info,
                     const gz::sim::EntityComponentManager &_ecm) override;
     void SetJointPosition(gz::sim::EntityComponentManager &_ecm, 
                           const std::array<double, 6> &target_q) override;
@@ -83,6 +84,9 @@ public:
     std::shared_ptr<rclcpp::executors::SingleThreadedExecutor>executor_;
     std::thread ros_spin_thread_;
     rclcpp::Publisher<controller::msg::ArmState>::SharedPtr joint_state_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_position_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_velocity_pub_;
+
     bool owns_context_{false};
     //Arm
     std::shared_ptr<ArmClass> Arm_;

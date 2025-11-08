@@ -268,9 +268,9 @@ static int8_t CDC_Receive_HS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 11 */
   // 调用回调函数处理接收到的数据
-  if (usb_rx_callback != NULL && *Len > 0)
+  if (*Len > 0)
   {
-    usb_rx_callback(Buf, *Len);
+    USBData_GetData(Buf, Len);
   }
 
   // 准备下一次接收

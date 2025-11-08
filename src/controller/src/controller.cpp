@@ -12,6 +12,7 @@
 #include "controller/msg/arm_state.hpp"
 #include "controller/msg/joint_state.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/float64_multi_array.hpp"
 #include <rclcpp/executors/single_threaded_executor.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/utilities.hpp>
@@ -40,6 +41,10 @@ void ControllerPlugin::Controller::Configure(const gz::sim::Entity &,
     this->executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     this->joint_state_pub_ = this->ros_node_
         ->create_publisher<controller::msg::ArmState>("/controller/arm_state", 10);
+    this->joint_position_pub_ = this->ros_node_
+        ->create_publisher<std_msgs::msg::Float64MultiArray>("/miniarm/joint_position", 10);
+    this->joint_velocity_pub_ = this->ros_node_
+        ->create_publisher<std_msgs::msg::Float64MultiArray>("/miniarm/joint_velocity", 10);
     this->executor_->add_node(this->ros_node_);
 
     // spin ROS2 node
@@ -71,8 +76,11 @@ void ControllerPlugin::Controller::PreUpdate
 };
 
 void ControllerPlugin::Controller::PostUpdate
-    (const gz::sim::UpdateInfo &,
+    (const gz::sim::UpdateInfo &_info,
         const gz::sim::EntityComponentManager &_ecm){
+
+    std_msgs::msg::Float64MultiArray position_msg;
+    std_msgs::msg::Float64MultiArray velocity_msg;
     controller::msg::ArmState msg;
     msg.joints.resize(6); //预分配内存
     for(int i = 0; i < 6; i++) {
@@ -80,53 +88,75 @@ void ControllerPlugin::Controller::PostUpdate
         joint_name.append("joint");
         joint_name.append(std::to_string(i + 1));
         msg.joints[i].joint_name.data = joint_name;
+        msg.joints[i].joint_position = 65535;
+        msg.joints[i].joint_velocity = 65535;
+        position_msg.data.push_back(65535);
+        velocity_msg.data.push_back(65535);
     }
 
-    // 遍历存储实体关节的角度和位置
-    for (const auto &ent_ : this->jointEntities_) {
-        const std::string &name = ent_.first;
-        const gz::sim::Entity &ent = ent_.second;
-        
-        controller::msg::JointState joint_state;
+    if (!_info.paused) {
+        // 遍历存储实体关节的角度和位置
+        for (const auto &ent_ : this->jointEntities_) {
+            const std::string &name = ent_.first;
+            const gz::sim::Entity &ent = ent_.second;
+            
+            controller::msg::JointState joint_state;
 
-        joint_state.joint_name.data = "Null";
-        joint_state.joint_position = 0.0;
-        joint_state.joint_velocity= 0.0;
-        // 读取Name
-        if (!name.empty()) {
-            joint_state.joint_name.data = name;
-        }
-        // 读取q
-        if(const auto *pos = _ecm.Component<gz::sim::components::JointPosition>(ent)) {
-            const auto &vector_ = pos->Data();
-            if (!vector_.empty()) {
-                double q = vector_[0];
-                joint_state.joint_position = q;
-                jointPosition_[name] = q;
+            joint_state.joint_name.data = "Null";
+            joint_state.joint_position = 0.0;
+            joint_state.joint_velocity= 0.0;
+            // 读取Name
+            if (!name.empty()) {
+                joint_state.joint_name.data = name;
+            }
+            // 读取q
+            if(const auto *pos = _ecm.Component<gz::sim::components::JointPosition>(ent)) {
+                const auto &vector_ = pos->Data();
+                if (!vector_.empty()) {
+                    double q = vector_[0];
+                    joint_state.joint_position = q;
+                    jointPosition_[name] = q;
+                }
+            }
+
+            // 读取q_dot
+            if (const auto *vel = _ecm.Component<gz::sim::components::JointVelocity>(ent)){
+                const auto &vector_ = vel->Data();
+                if (!vector_.empty()) {
+                    double q_dot = vector_[0];
+                    joint_state.joint_velocity = q_dot;
+                    jointVelocity_[name] = q_dot;
+                }
+            }
+
+            // 存储
+            for (auto &slot : msg.joints) {
+                if (slot.joint_name.data == joint_state.joint_name.data) {
+                    slot.joint_position = joint_state.joint_position;
+                    slot.joint_velocity = joint_state.joint_velocity;
+                    break;
+                }
             }
         }
 
-        // 读取q_dot
-        if (const auto *vel = _ecm.Component<gz::sim::components::JointVelocity>(ent)){
-            const auto &vector_ = vel->Data();
-            if (!vector_.empty()) {
-                double q_dot = vector_[0];
-                joint_state.joint_velocity = q_dot;
-                jointVelocity_[name] = q_dot;
-            }
-        }
+        position_msg.data[0] = this->jointPosition_["joint1"];
+        position_msg.data[1] = this->jointPosition_["joint2"];
+        position_msg.data[2] = this->jointPosition_["joint3"];
+        position_msg.data[3] = this->jointPosition_["joint4"];
+        position_msg.data[4] = this->jointPosition_["joint5"];
+        position_msg.data[5] = this->jointPosition_["joint6"];
 
-        // 存储
-        for (auto &slot : msg.joints) {
-            if (slot.joint_name.data == joint_state.joint_name.data) {
-                slot.joint_position = joint_state.joint_position;
-                slot.joint_velocity = joint_state.joint_velocity;
-                break;
-            }
-        }
+        velocity_msg.data[0] = this->jointVelocity_["joint1"];
+        velocity_msg.data[1] = this->jointVelocity_["joint2"];
+        velocity_msg.data[2] = this->jointVelocity_["joint3"];
+        velocity_msg.data[3] = this->jointVelocity_["joint4"];
+        velocity_msg.data[4] = this->jointVelocity_["joint5"];
+        velocity_msg.data[5] = this->jointVelocity_["joint6"];
     }
 
     this->joint_state_pub_->publish(msg);
+    this->joint_position_pub_->publish(position_msg);
+    this->joint_velocity_pub_->publish(velocity_msg);
 };
 
 GZ_ADD_PLUGIN(

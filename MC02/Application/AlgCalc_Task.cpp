@@ -60,11 +60,12 @@ robotics::Link links[6] = {
                        -PI, PI, mess[5], centroid.col(5), I[5]),
     };
 robotics::Serial_Link<6> miniArm(links);
-Matrixf<6,1> Tor;
+Matrixf<6,1> FeedForward_Torque;
 
 float us;
-float target_q[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
+extern float FeedBack_Velocity[6];
+extern float FeedBack_Position[6];
+extern float JointTorque[6];
 UBaseType_t highwater = 0;
 
 void App_AlgCalc(void const * argument) {
@@ -74,18 +75,22 @@ void App_AlgCalc(void const * argument) {
     while (1) {
 
         // 生成随机序列
-        target_q[0] = randomFloat(-3.1415, 3.1415, 0);
-        target_q[1] = randomFloat(-0.3, 1.1570, 1);
-        target_q[2] = randomFloat(-2.6, 1.1570, 2);
-        target_q[3] = randomFloat(-2.6, 0.0, 3);
-        target_q[4] = randomFloat(-1.2, 1.2, 4);
-        target_q[5] = randomFloat(-3.1415, 3.1415, 5);
+        FeedBack_Position[0] = randomFloat(-3.1415, 3.1415, 0);
+        FeedBack_Position[1] = randomFloat(-0.3, 1.1570, 1);
+        FeedBack_Position[2] = randomFloat(-2.6, 1.1570, 2);
+        FeedBack_Position[3] = randomFloat(-2.6, 0.0, 3);
+        FeedBack_Position[4] = randomFloat(-1.2, 1.2, 4);
+        FeedBack_Position[5] = randomFloat(-3.1415, 3.1415, 5);
 
         uint32_t start = DWT_GetCycle();
-        Tor = miniArm.rne(target_q);
+        FeedForward_Torque = miniArm.rne(FeedBack_Position);
         uint32_t end = DWT_GetCycle();
 
         us = DWT_GetMicroseconds(start, end);
+
+        for (uint8_t i = 0; i < 6; i++) {
+            JointTorque[i] = FeedForward_Torque[i][0];
+        }
 
         highwater = uxTaskGetStackHighWaterMark(NULL);
         osDelay(1);
