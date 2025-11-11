@@ -54,6 +54,7 @@ include_directories(${includes}
                     User_Lib/USB
                     Application
                     Phoenix_Lib/Bsp/Log
+                    Phoenix_Lib/Algorithm/Pid
                     Jlink_RTT)
 
 add_definitions(${defines})
@@ -62,7 +63,8 @@ file(GLOB_RECURSE SOURCES ${sources}
                      "User_Lib/*.*"
                      "Application/*.*"
                      "Jlink_RTT/*.*"
-                     "Phoenix_Lib/Bsp/Log/*.*")
+                     "Phoenix_Lib/Bsp/Log/*.*"
+                     "Phoenix_Lib/Algorithm/Pid/*.*")
 
 set(LINKER_SCRIPT $${CMAKE_SOURCE_DIR}/${linkerScript})
 

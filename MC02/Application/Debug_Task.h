@@ -12,14 +12,7 @@ typedef struct {
     char end;            // 31 帧尾，取 'e'
 } Controller_package;
 
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 void App_DebugTask(void const* argument);
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif //DEBUG_TASK_H

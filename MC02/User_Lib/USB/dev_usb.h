@@ -10,15 +10,15 @@
 #define DEV_USB_H
 #include "main.h"
 
+#pragma pack(1)
 typedef struct {
-    char start;       // 0 帧头，取 's'
+    uint8_t start;    // 0 帧头，取 's'
     char datatype;    // 1 消息类型
-    char command;     // 2 命令字
-    uint32_t data[6]; // 3 - 27 数据域，最多存储6个float类型数据
-    // 28 - 30 预留空位
-    char end; // 31 帧尾，取 'e'
+    uint32_t data[6]; // 2 - 26 数据域，最多存储6个float类型数据
+    // 27 - 30 预留空位
+    uint8_t end; // 31 帧尾，取 'e'
 } SerialPacket_t;
-
+#pragma pack()
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,11 +33,9 @@ void USBData_Process();
 
 void USBData_GetData(uint8_t* Buf, uint32_t* Len);
 
-void USBData_SendData(uint8_t* Buf, uint32_t* Len);
-
 void USBData_init();
 
-void USB_SendMsg(uint32_t *Data);
+void USB_SendMsg(uint8_t datatype, uint32_t* Data);
 #ifdef __cplusplus
 }
 #endif

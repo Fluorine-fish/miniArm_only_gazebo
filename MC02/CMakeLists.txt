@@ -1,7 +1,7 @@
 #此文件从模板自动生成! 请勿更改!
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_VERSION 1)
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.31)
 
 # specify cross-compilers and tools
 set(CMAKE_C_COMPILER arm-none-eabi-gcc)
@@ -55,6 +55,7 @@ include_directories(Core/Inc USB_DEVICE/App USB_DEVICE/Target Drivers/STM32H7xx_
                     User_Lib/USB
                     Application
                     Phoenix_Lib/Bsp/Log
+                    Phoenix_Lib/Algorithm/Pid
                     Jlink_RTT)
 
 add_definitions(-DDEBUG -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx)
@@ -63,7 +64,8 @@ file(GLOB_RECURSE SOURCES "Core/*.*" "Middlewares/*.*" "USB_DEVICE/*.*" "Drivers
                      "User_Lib/*.*"
                      "Application/*.*"
                      "Jlink_RTT/*.*"
-                     "Phoenix_Lib/Bsp/Log/*.*")
+                     "Phoenix_Lib/Bsp/Log/*.*"
+                     "Phoenix_Lib/Algorithm/Pid/*.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32H723VGTX_FLASH.ld)
 
