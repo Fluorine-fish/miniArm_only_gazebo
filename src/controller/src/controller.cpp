@@ -12,11 +12,10 @@
 #include "controller/msg/arm_state.hpp"
 #include "controller/msg/joint_state.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/float64_multi_array.hpp"
 #include <rclcpp/executors/single_threaded_executor.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/utilities.hpp>
-#include <std_msgs/msg/float64_multi_array.hpp>
+#include <std_msgs/msg/float32_multi_array.hpp>
 #include <gz/plugin/Register.hh>
 
 #include <controller/controller.hpp>
@@ -42,9 +41,9 @@ void ControllerPlugin::Controller::Configure(const gz::sim::Entity &,
     this->joint_state_pub_ = this->ros_node_
         ->create_publisher<controller::msg::ArmState>("/controller/arm_state", 10);
     this->joint_position_pub_ = this->ros_node_
-        ->create_publisher<std_msgs::msg::Float64MultiArray>("/miniarm/joint_position", 10);
+        ->create_publisher<std_msgs::msg::Float32MultiArray>("/miniarm/joint_position", 10);
     this->joint_velocity_pub_ = this->ros_node_
-        ->create_publisher<std_msgs::msg::Float64MultiArray>("/miniarm/joint_velocity", 10);
+        ->create_publisher<std_msgs::msg::Float32MultiArray>("/miniarm/joint_velocity", 10);
     this->executor_->add_node(this->ros_node_);
 
     // spin ROS2 node
@@ -79,8 +78,8 @@ void ControllerPlugin::Controller::PostUpdate
     (const gz::sim::UpdateInfo &_info,
         const gz::sim::EntityComponentManager &_ecm){
 
-    std_msgs::msg::Float64MultiArray position_msg;
-    std_msgs::msg::Float64MultiArray velocity_msg;
+    std_msgs::msg::Float32MultiArray position_msg;
+    std_msgs::msg::Float32MultiArray velocity_msg;
     controller::msg::ArmState msg;
     msg.joints.resize(6); //预分配内存
     for(int i = 0; i < 6; i++) {

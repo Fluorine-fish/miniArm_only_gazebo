@@ -14,9 +14,9 @@
 typedef struct {
     uint8_t start;    // 0 帧头，取 's'
     char datatype;    // 1 消息类型
-    uint32_t data[6]; // 2 - 26 数据域，最多存储6个float类型数据
-    // 27 - 30 预留空位
-    uint8_t end; // 31 帧尾，取 'e'
+    float data[6]; // 2 - 26 数据域，最多存储6个float类型数据
+    // 28 - 30 预留空位
+    char end; // 31 帧尾，取 'e'
 } SerialPacket_t;
 #pragma pack()
 

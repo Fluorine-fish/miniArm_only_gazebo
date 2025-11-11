@@ -63,58 +63,49 @@ void USB_Data::CPP_USBData_Process(void) {
     if (CPP_myUSBRxNum) {
         msg_cnt += 1; //接收到数据计数+1
 
-        if (CPP_myUSBRxData[1] == 0xA6) {
-            //满足上位机发送数据协议的处理方法
-            msg_from_minipc.start = CPP_myUSBRxData[0];
-            msg_from_minipc.datatype = CPP_myUSBRxData[1];
-            uint32_t data[6] = {0}; //数据域
-            for (int i = 0; i < 6; i++) {
-                data[i] = *(uint32_t*)(CPP_myUSBRxData + 2 + (i * 4));
+        //满足上位机发送数据协议的处理方法
+        msg_from_minipc.start = CPP_myUSBRxData[0];
+        msg_from_minipc.datatype = CPP_myUSBRxData[1];
+        float data[6] = {0}; //数据域
+        for (int i = 0; i < 6; i++) {
+            uint8_t rawdata[4];
+            for (int j = 0; j < 4; j++) {
+                rawdata[j] = CPP_myUSBRxData[2 + j + i*4];
             }
-            msg_from_minipc.end = CPP_myUSBRxData[31];
-
-            switch (msg_from_minipc.datatype) {
-                case 0xA6: // MiniArm Joint Position Info
-                    FeedBack_Position[0] = (float)data[0];
-                    FeedBack_Position[1] = (float)data[1];
-                    FeedBack_Position[2] = (float)data[2];
-                    FeedBack_Position[3] = (float)data[3];
-                    FeedBack_Position[4] = (float)data[4];
-                    FeedBack_Position[5] = (float)data[5];
-                    break;
-                case 0xA7: // MiniArm Joint Velocity Info
-                    FeedBack_Velocity[0] = (float)data[0];
-                    FeedBack_Velocity[1] = (float)data[1];
-                    FeedBack_Velocity[2] = (float)data[2];
-                    FeedBack_Velocity[3] = (float)data[3];
-                    FeedBack_Velocity[4] = (float)data[4];
-                    FeedBack_Velocity[5] = (float)data[5];
-                    break;
-                default:
-                    // 不发送Error信息
-                    // uint8_t msg_buf[32] = {0};
-                    // msg_buf[0] = 'E'; //Error开头
-                    // for (char i = 0; i < CPP_myUSBRxNum && i < 32; i++) {
-                    //     msg_buf[i + 1] = CPP_myUSBRxData[i]; //将接收到的数据复制到msg_buf
-                    // }
-                    // uint32_t msg_len = CPP_myUSBRxNum + 1; //加上Error开头的字节
-                    // CPP_USBData_SendData(msg_buf, &msg_len);
-                    break;
-            }
-            memset(CPP_myUSBRxData, 0, 32); //数据处理后清空缓存区
-            CPP_myUSBRxNum = 0;             //有利于判断，置0
-        } else {
-            //如果不是协议约定的格式 就原样将数据发回，并且以Error开头
-            // uint8_t msg_buf[32] = {0};
-            // msg_buf[0] = 'E'; //Error开头
-            // for (char i = 0; i < CPP_myUSBRxNum && i < 32; i++) {
-            //     msg_buf[i + 1] = CPP_myUSBRxData[i]; //将接收到的数据复制到msg_buf
-            // }
-            // uint32_t msg_len = CPP_myUSBRxNum + 1; //加上Error开头的字节
-            // CPP_USBData_SendData(msg_buf, &msg_len);
-            // memset(CPP_myUSBRxData, 0, 32); //数据处理后清空缓存区
-            // CPP_myUSBRxNum = 0;             //有利于判断，置0
+            data[i] = *(float*)rawdata;
         }
+        msg_from_minipc.end = CPP_myUSBRxData[31];
+
+        switch (msg_from_minipc.datatype) {
+            case 0xA6: // 位置信息
+                FeedBack_Position[0] = data[0];
+                FeedBack_Position[1] = data[1];
+                FeedBack_Position[2] = data[2];
+                FeedBack_Position[3] = data[3];
+                FeedBack_Position[4] = data[4];
+                FeedBack_Position[5] = data[5];
+                break;
+            case 0xA7: // 速度信息
+                FeedBack_Velocity[0] = data[0];
+                FeedBack_Velocity[1] = data[1];
+                FeedBack_Velocity[2] = data[2];
+                FeedBack_Velocity[3] = data[3];
+                FeedBack_Velocity[4] = data[4];
+                FeedBack_Velocity[5] = data[5];
+                break;
+            default:
+                // uint8_t msg_buf[32] = {0};
+                // msg_buf[0] = 'E'; //Error开头
+                // for (char i = 0; i < CPP_myUSBRxNum && i < 32; i++) {
+                //     msg_buf[i + 1] = CPP_myUSBRxData[i]; //将接收到的数据复制到msg_buf
+                // }
+                // uint32_t msg_len = CPP_myUSBRxNum + 1; //加上Error开头的字节
+                // CPP_USBData_SendData(msg_buf, &msg_len);
+                break;
+        }
+
+        memset(CPP_myUSBRxData, 0, 32); //数据处理后清空缓存区
+        CPP_myUSBRxNum = 0;             //有利于判断，置0
     }
 }
 

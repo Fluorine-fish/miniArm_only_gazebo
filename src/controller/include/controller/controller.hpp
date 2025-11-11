@@ -21,7 +21,7 @@
 #include "controller/msg/arm_state.hpp"
 #include "controller/arm.hpp"
 #include "controller/controller_interface.hpp"
-#include "std_msgs/msg/float64_multi_array.hpp"
+#include "std_msgs/msg/float32_multi_array.hpp"
 
 namespace ControllerPlugin {
     class Controller :
@@ -84,8 +84,8 @@ public:
     std::shared_ptr<rclcpp::executors::SingleThreadedExecutor>executor_;
     std::thread ros_spin_thread_;
     rclcpp::Publisher<controller::msg::ArmState>::SharedPtr joint_state_pub_;
-    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_position_pub_;
-    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_velocity_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr joint_position_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr joint_velocity_pub_;
 
     bool owns_context_{false};
     //Arm

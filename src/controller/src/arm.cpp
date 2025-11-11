@@ -14,7 +14,7 @@
 #include <controller/arm.hpp>
 #include <vector>
 
-void ArmClass::ArmPositionCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg) {
+void ArmClass::ArmPositionCmdCallback(std_msgs::msg::Float32MultiArray::SharedPtr msg) {
     if (msg) {
         const auto &data = msg->data;
         if (!data.empty() && data.size() == 6) {
@@ -27,7 +27,7 @@ void ArmClass::ArmPositionCmdCallback(std_msgs::msg::Float64MultiArray::SharedPt
     }
 };
 
-void ArmClass::ArmForceCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg) {
+void ArmClass::ArmForceCmdCallback(std_msgs::msg::Float32MultiArray::SharedPtr msg) {
     if (msg) {
         const auto &data = msg->data;
         if (!data.empty() && data.size() == 6) {
@@ -40,7 +40,7 @@ void ArmClass::ArmForceCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr m
     }
 };
 
-void ArmClass::ArmVelocityCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg) {
+void ArmClass::ArmVelocityCmdCallback(std_msgs::msg::Float32MultiArray::SharedPtr msg) {
     if (msg) {
         const auto &data = msg->data;
         if (!data.empty() && data.size() == 6) {
@@ -53,7 +53,7 @@ void ArmClass::ArmVelocityCmdCallback(std_msgs::msg::Float64MultiArray::SharedPt
     }
 };
 
-void ArmClass::ArmDragtoJointPositionCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg){
+void ArmClass::ArmDragtoJointPositionCmdCallback(std_msgs::msg::Float32MultiArray::SharedPtr msg){
     if (msg) {
         const auto &data = msg->data;
         if (!data.empty() && data.size() == 6) {

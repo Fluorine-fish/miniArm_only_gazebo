@@ -7,7 +7,7 @@
 #include <rclcpp/executors.hpp>
 #include <string>
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/float64_multi_array.hpp"
+#include "std_msgs/msg/float32_multi_array.hpp"
 
 #include <controller/controller_interface.hpp>
 
@@ -31,24 +31,24 @@ public:
         this->ros_node_ = std::make_shared<rclcpp::Node>("Arm_node");
         this->executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
         this->joint_position_sub_ = this->ros_node_
-            ->create_subscription<std_msgs::msg::Float64MultiArray>(
+            ->create_subscription<std_msgs::msg::Float32MultiArray>(
                 "/Arm/joint_position_cmd", 10, 
-                [this](std_msgs::msg::Float64MultiArray::SharedPtr msg)
+                [this](std_msgs::msg::Float32MultiArray::SharedPtr msg)
                 {this->ArmPositionCmdCallback(msg);});
         this->joint_force_sub_ = this->ros_node_
-            ->create_subscription<std_msgs::msg::Float64MultiArray>(
+            ->create_subscription<std_msgs::msg::Float32MultiArray>(
                 "/Arm/joint_force_cmd", 10, 
-                [this](std_msgs::msg::Float64MultiArray::SharedPtr msg)
+                [this](std_msgs::msg::Float32MultiArray::SharedPtr msg)
                 {this->ArmForceCmdCallback(msg);});
         this->joint_velocity_sub_ = this->ros_node_
-            ->create_subscription<std_msgs::msg::Float64MultiArray>(
+            ->create_subscription<std_msgs::msg::Float32MultiArray>(
                 "/Arm/joint_velocity_cmd", 10, 
-                [this](std_msgs::msg::Float64MultiArray::SharedPtr msg)
+                [this](std_msgs::msg::Float32MultiArray::SharedPtr msg)
                 {this->ArmVelocityCmdCallback(msg);});
         this->drag_to_joint_position_sub_ = this->ros_node_
-            ->create_subscription<std_msgs::msg::Float64MultiArray>(
+            ->create_subscription<std_msgs::msg::Float32MultiArray>(
                 "/Arm/drag_to_joint_pisition_cmd", 10, 
-                [this](std_msgs::msg::Float64MultiArray::SharedPtr msg)
+                [this](std_msgs::msg::Float32MultiArray::SharedPtr msg)
                 {this->ArmDragtoJointPositionCmdCallback(msg);});
         this->executor_->add_node(this->ros_node_);
 
@@ -72,13 +72,13 @@ public:
     };
 
     // 直接调用cotroller_interface接口的底层方法
-    void ArmPositionCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg);
+    void ArmPositionCmdCallback(std_msgs::msg::Float32MultiArray::SharedPtr msg);
 
-    void ArmVelocityCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg);
+    void ArmVelocityCmdCallback(std_msgs::msg::Float32MultiArray::SharedPtr msg);
 
-    void ArmForceCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg);
+    void ArmForceCmdCallback(std_msgs::msg::Float32MultiArray::SharedPtr msg);
 
-    void ArmDragtoJointPositionCmdCallback(std_msgs::msg::Float64MultiArray::SharedPtr msg);
+    void ArmDragtoJointPositionCmdCallback(std_msgs::msg::Float32MultiArray::SharedPtr msg);
 
     void ArmPositionSet(gz::sim::EntityComponentManager &_ecm,
                         const std::array<double, 6> &target_q);
@@ -114,10 +114,10 @@ public:
     std::shared_ptr<rclcpp::Node> ros_node_;
     std::shared_ptr<rclcpp::executors::SingleThreadedExecutor>executor_;
     std::thread ros_spin_thread_;
-    rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr joint_position_sub_;
-    rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr joint_velocity_sub_;
-    rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr joint_force_sub_;
-    rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr drag_to_joint_position_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr joint_position_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr joint_velocity_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr joint_force_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr drag_to_joint_position_sub_;
     bool owns_context_{false};
 
     bool _is_initialed{false};
